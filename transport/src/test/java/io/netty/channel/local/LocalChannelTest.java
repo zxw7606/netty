@@ -791,7 +791,8 @@ public class LocalChannelTest {
 
             cc.pipeline().addLast(new TestHandler() {
                 @Override
-                public ChannelFuture connect(ChannelHandlerContext ctx, SocketAddress remoteAddress, SocketAddress localAddress) {
+                public ChannelFuture connect(ChannelHandlerContext ctx, SocketAddress remoteAddress,
+                                             SocketAddress localAddress) {
                     promise.setSuccess();
                     return super.connect(ctx, remoteAddress, localAddress);
                 }
