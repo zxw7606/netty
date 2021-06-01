@@ -38,6 +38,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
 import io.netty.util.CharsetUtil;
+import io.netty.util.concurrent.PromiseNotifier;
 import io.netty.util.internal.SystemPropertyUtil;
 
 import javax.activation.MimetypesFileTypeMap;
@@ -197,13 +198,14 @@ public class HttpStaticFileServerHandler extends SimpleChannelInboundHandler<Ful
         ChannelFuture lastContentFuture;
         if (ctx.pipeline().get(SslHandler.class) == null) {
             sendFileFuture =
-                    ctx.write(new DefaultFileRegion(raf.getChannel(), 0, fileLength), ctx.newProgressivePromise());
+                    ctx.write(new DefaultFileRegion(raf.getChannel(), 0, fileLength))
+                            .addListener(new PromiseNotifier<>(ctx.newProgressivePromise()));
             // Write the end marker.
             lastContentFuture = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
         } else {
             sendFileFuture =
-                    ctx.writeAndFlush(new HttpChunkedInput(new ChunkedFile(raf, 0, fileLength, 8192)),
-                            ctx.newProgressivePromise());
+                    ctx.writeAndFlush(new HttpChunkedInput(new ChunkedFile(raf, 0, fileLength, 8192)))
+                            .addListener(new PromiseNotifier<>(ctx.newProgressivePromise()));
             // HttpChunkedInput will write the end marker (LastHttpContent) for us.
             lastContentFuture = sendFileFuture;
         }
