@@ -230,46 +230,8 @@ public final class BinaryMemcacheClientCodec extends
                     return ctx.register();
                 }
 
-                @Override
-                public ChannelFuture register(ChannelPromise promise) {
-                    return ctx.register(promise);
-                }
-
-                public ChannelFuture bind(SocketAddress localAddress, ChannelPromise promise) {
-                    return ctx.bind(localAddress, promise);
-                }
-
-                public ChannelFuture connect(SocketAddress remoteAddress, ChannelPromise promise) {
-                    return ctx.connect(remoteAddress, promise);
-                }
-
-                public ChannelFuture connect(
-                        SocketAddress remoteAddress, SocketAddress localAddress, ChannelPromise promise) {
-                    return ctx.connect(remoteAddress, localAddress, promise);
-                }
-
-                public ChannelFuture disconnect(ChannelPromise promise) {
-                    return ctx.disconnect(promise);
-                }
-
-                public ChannelFuture close(ChannelPromise promise) {
-                    return ctx.close(promise);
-                }
-
-                public ChannelFuture deregister(ChannelPromise promise) {
-                    return ctx.deregister(promise);
-                }
-
                 public ChannelFuture write(Object msg) {
                     return ctx.write(msg);
-                }
-
-                public ChannelFuture write(Object msg, ChannelPromise promise) {
-                    return ctx.write(msg, promise);
-                }
-
-                public ChannelFuture writeAndFlush(Object msg, ChannelPromise promise) {
-                    return ctx.writeAndFlush(msg, promise);
                 }
 
                 public ChannelFuture writeAndFlush(Object msg) {
@@ -290,10 +252,6 @@ public final class BinaryMemcacheClientCodec extends
 
                 public ChannelFuture newFailedFuture(Throwable cause) {
                     return ctx.newFailedFuture(cause);
-                }
-
-                public ChannelPromise voidPromise() {
-                    return ctx.voidPromise();
                 }
             };
         }

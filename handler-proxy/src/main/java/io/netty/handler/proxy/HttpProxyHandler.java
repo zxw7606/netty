@@ -19,10 +19,10 @@ package io.netty.handler.proxy;
 import static java.util.Objects.requireNonNull;
 
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpClientCodec;
@@ -285,44 +285,43 @@ public final class HttpProxyHandler extends ProxyHandler {
         }
 
         @Override
-        public void bind(ChannelHandlerContext ctx, SocketAddress localAddress,
-                         ChannelPromise promise) throws Exception {
-            codec.bind(ctx, localAddress, promise);
+        public ChannelFuture bind(ChannelHandlerContext ctx, SocketAddress localAddress) {
+            return codec.bind(ctx, localAddress);
         }
 
         @Override
-        public void connect(ChannelHandlerContext ctx, SocketAddress remoteAddress, SocketAddress localAddress,
-                            ChannelPromise promise) throws Exception {
-            codec.connect(ctx, remoteAddress, localAddress, promise);
+        public ChannelFuture connect(
+                ChannelHandlerContext ctx, SocketAddress remoteAddress, SocketAddress localAddress) {
+            return codec.connect(ctx, remoteAddress, localAddress);
         }
 
         @Override
-        public void disconnect(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-            codec.disconnect(ctx, promise);
+        public ChannelFuture disconnect(ChannelHandlerContext ctx) {
+            return codec.disconnect(ctx);
         }
 
         @Override
-        public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-            codec.close(ctx, promise);
+        public ChannelFuture close(ChannelHandlerContext ctx) {
+            return codec.close(ctx);
         }
 
         @Override
-        public void deregister(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-            codec.deregister(ctx, promise);
+        public ChannelFuture deregister(ChannelHandlerContext ctx) {
+            return codec.deregister(ctx);
         }
 
         @Override
-        public void read(ChannelHandlerContext ctx) throws Exception {
+        public void read(ChannelHandlerContext ctx)  {
             codec.read(ctx);
         }
 
         @Override
-        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-            codec.write(ctx, msg, promise);
+        public ChannelFuture write(ChannelHandlerContext ctx, Object msg) {
+           return codec.write(ctx, msg);
         }
 
         @Override
-        public void flush(ChannelHandlerContext ctx) throws Exception {
+        public void flush(ChannelHandlerContext ctx) {
             codec.flush(ctx);
         }
     }

@@ -28,6 +28,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelProgressivePromise;
 import io.netty.channel.ChannelPromise;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.concurrent.PromiseNotifier;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 
@@ -115,12 +116,14 @@ public class ChunkedWriteHandler implements ChannelHandler {
     }
 
     @Override
-    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+    public ChannelFuture write(ChannelHandlerContext ctx, Object msg) {
+        ChannelPromise promise = ctx.newPromise();
         queue.add(new PendingWrite(msg, promise));
+        return promise;
     }
 
     @Override
-    public void flush(ChannelHandlerContext ctx) throws Exception {
+    public void flush(ChannelHandlerContext ctx) {
         doFlush(ctx);
     }
 
@@ -282,7 +285,7 @@ public class ChunkedWriteHandler implements ChannelHandler {
                 requiresFlush = false;
             } else {
                 queue.remove();
-                ctx.write(pendingMessage, currentWrite.promise);
+                ctx.write(pendingMessage).addListener(new PromiseNotifier<>(currentWrite.promise));
                 requiresFlush = true;
             }
 

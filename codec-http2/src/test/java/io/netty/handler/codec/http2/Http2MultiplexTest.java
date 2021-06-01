@@ -31,6 +31,7 @@ import io.netty.handler.codec.http2.Http2Exception.StreamException;
 import io.netty.util.AsciiString;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.PromiseNotifier;
 import org.hamcrest.CoreMatchers;
 import org.junit.After;
 import org.junit.Before;
@@ -723,7 +724,7 @@ public abstract class Http2MultiplexTest<C extends Http2FrameCodec> {
             channelOpen.set(future.channel().isOpen());
             channelActive.set(future.channel().isActive());
         });
-        childChannel.close(p).syncUninterruptibly();
+        childChannel.close().addListener(new PromiseNotifier<>(p)).syncUninterruptibly();
 
         assertFalse(channelOpen.get());
         assertFalse(channelActive.get());
@@ -856,7 +857,7 @@ public abstract class Http2MultiplexTest<C extends Http2FrameCodec> {
         // and verify that this only affect the writability of the parent channel while the child stays writable
         // until it used all of its credits.
         parentChannel.unsafe().outboundBuffer().addMessage(
-                Unpooled.buffer().writeZero(800), 800, parentChannel.voidPromise());
+                Unpooled.buffer().writeZero(800), 800, parentChannel.newPromise());
         assertFalse(parentChannel.isWritable());
 
         assertTrue(childChannel.isWritable());
@@ -959,7 +960,7 @@ public abstract class Http2MultiplexTest<C extends Http2FrameCodec> {
     public void callUnsafeCloseMultipleTimes() {
         LastInboundHandler inboundHandler = new LastInboundHandler();
         Http2StreamChannel childChannel = newInboundStream(3, false, inboundHandler);
-        childChannel.unsafe().close(childChannel.voidPromise());
+        childChannel.unsafe().close(childChannel.unsafe().voidPromise());
 
         ChannelPromise promise = childChannel.newPromise();
         childChannel.unsafe().close(promise);
@@ -1261,7 +1262,7 @@ public abstract class Http2MultiplexTest<C extends Http2FrameCodec> {
         }
 
         @Override
-        public void flush(ChannelHandlerContext ctx) throws Exception {
+        public void flush(ChannelHandlerContext ctx) {
             didFlush = true;
             ctx.flush();
         }

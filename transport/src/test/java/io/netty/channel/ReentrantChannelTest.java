@@ -173,16 +173,16 @@ public class ReentrantChannelTest extends BaseChannelTest {
             int flushCount;
 
             @Override
-            public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+            public ChannelFuture write(ChannelHandlerContext ctx, Object msg) {
                 if (writeCount < 5) {
                     writeCount++;
                     ctx.channel().flush();
                 }
-                ctx.write(msg,  promise);
+                return ctx.write(msg);
             }
 
             @Override
-            public void flush(ChannelHandlerContext ctx) throws Exception {
+            public void flush(ChannelHandlerContext ctx) {
                 if (flushCount < 5) {
                     flushCount++;
                     ctx.channel().write(createTestBuf(2000));
@@ -227,10 +227,10 @@ public class ReentrantChannelTest extends BaseChannelTest {
         clientChannel.pipeline().addLast(new ChannelHandler() {
 
             @Override
-            public void write(final ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-                promise.addListener(future -> ctx.channel().close());
-                ctx.write(msg, promise);
+            public ChannelFuture write(final ChannelHandlerContext ctx, Object msg) {
+                ChannelFuture f = ctx.write(msg).addListener(ChannelFutureListener.CLOSE);
                 ctx.channel().flush();
+                return f;
             }
         });
 
@@ -257,8 +257,8 @@ public class ReentrantChannelTest extends BaseChannelTest {
         clientChannel.pipeline().addLast(new ChannelHandler() {
 
             @Override
-            public void flush(ChannelHandlerContext ctx) throws Exception {
-                throw new Exception("intentional failure");
+            public void flush(ChannelHandlerContext ctx) {
+                throw new IllegalStateException("intentional failure");
             }
 
         }, new ChannelHandler() {

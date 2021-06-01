@@ -19,6 +19,7 @@ package io.netty.handler.proxy;
 import static java.util.Objects.requireNonNull;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -165,17 +166,15 @@ public abstract class ProxyHandler implements ChannelHandler {
     protected abstract void removeDecoder(ChannelHandlerContext ctx) throws Exception;
 
     @Override
-    public final void connect(
-            ChannelHandlerContext ctx, SocketAddress remoteAddress, SocketAddress localAddress,
-            ChannelPromise promise) throws Exception {
+    public final ChannelFuture connect(
+            ChannelHandlerContext ctx, SocketAddress remoteAddress, SocketAddress localAddress) {
 
         if (destinationAddress != null) {
-            promise.setFailure(new ConnectionPendingException());
-            return;
+            return ctx.newFailedFuture(new ConnectionPendingException());
         }
 
         destinationAddress = remoteAddress;
-        ctx.connect(proxyAddress, localAddress, promise);
+        return ctx.connect(proxyAddress, localAddress);
     }
 
     @Override
@@ -394,17 +393,18 @@ public abstract class ProxyHandler implements ChannelHandler {
     }
 
     @Override
-    public final void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+    public final ChannelFuture write(ChannelHandlerContext ctx, Object msg) {
         if (finished) {
             writePendingWrites();
-            ctx.write(msg, promise);
-        } else {
-            addPendingWrite(ctx, msg, promise);
+            return ctx.write(msg);
         }
+        ChannelPromise promise = ctx.newPromise();
+        addPendingWrite(ctx, msg, promise);
+        return promise;
     }
 
     @Override
-    public final void flush(ChannelHandlerContext ctx) throws Exception {
+    public final void flush(ChannelHandlerContext ctx) {
         if (finished) {
             writePendingWrites();
             ctx.flush();
@@ -419,11 +419,13 @@ public abstract class ProxyHandler implements ChannelHandler {
         }
     }
 
-    private void writePendingWrites() {
+    private ChannelFuture writePendingWrites() {
         if (pendingWrites != null) {
-            pendingWrites.removeAndWriteAll();
+            PendingWriteQueue queue = pendingWrites;
             pendingWrites = null;
+            return queue.removeAndWriteAll();
         }
+        return ctx.newSucceededFuture();
     }
 
     private void failPendingWrites(Throwable cause) {

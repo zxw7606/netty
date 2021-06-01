@@ -26,12 +26,12 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.Http2Exception.CompositeStreamException;
 import io.netty.handler.codec.http2.Http2Exception.StreamException;
 import io.netty.util.CharsetUtil;
+import io.netty.util.concurrent.PromiseNotifier;
 import io.netty.util.concurrent.ScheduledFuture;
 import io.netty.util.internal.UnstableApi;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 
-import java.net.SocketAddress;
 import java.util.concurrent.TimeUnit;
 
 import static io.netty.buffer.ByteBufUtil.hexDump;
@@ -203,7 +203,7 @@ public class Http2ConnectionHandler extends ByteToMessageDecoder implements Http
 
             // We need to remove all streams (not just the active ones).
             // See https://github.com/netty/netty/issues/4838.
-            connection().close(ctx.voidPromise());
+            connection().close(ctx.newPromise());
         }
 
         /**
@@ -436,32 +436,13 @@ public class Http2ConnectionHandler extends ByteToMessageDecoder implements Http
     }
 
     @Override
-    public void bind(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise) throws Exception {
-        ctx.bind(localAddress, promise);
-    }
-
-    @Override
-    public void connect(ChannelHandlerContext ctx, SocketAddress remoteAddress, SocketAddress localAddress,
-                        ChannelPromise promise) throws Exception {
-        ctx.connect(remoteAddress, localAddress, promise);
-    }
-
-    @Override
-    public void disconnect(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        ctx.disconnect(promise);
-    }
-
-    @Override
-    public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+    public ChannelFuture close(ChannelHandlerContext ctx) {
         if (decoupleCloseAndGoAway) {
-            ctx.close(promise);
-            return;
+            return ctx.close();
         }
-        promise = promise.unvoid();
         // Avoid NotYetConnectedException and avoid sending before connection preface
         if (!ctx.channel().isActive() || !prefaceSent()) {
-            ctx.close(promise);
-            return;
+            return ctx.close();
         }
 
         // If the user has already sent a GO_AWAY frame they may be attempting to do a graceful shutdown which requires
@@ -471,7 +452,9 @@ public class Http2ConnectionHandler extends ByteToMessageDecoder implements Http
         // https://github.com/netty/netty/issues/5307
         ChannelFuture f = connection().goAwaySent() ? ctx.write(EMPTY_BUFFER) : goAway(ctx, null, ctx.newPromise());
         ctx.flush();
+        ChannelPromise promise = ctx.newPromise();
         doGracefulShutdown(ctx, f, promise);
+        return promise;
     }
 
     private ChannelFutureListener newClosingChannelFutureListener(
@@ -506,26 +489,6 @@ public class Http2ConnectionHandler extends ByteToMessageDecoder implements Http
                 };
             }
         }
-    }
-
-    @Override
-    public void register(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        ctx.register(promise);
-    }
-
-    @Override
-    public void deregister(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        ctx.deregister(promise);
-    }
-
-    @Override
-    public void read(ChannelHandlerContext ctx) throws Exception {
-        ctx.read();
-    }
-
-    @Override
-    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-        ctx.write(msg, promise);
     }
 
     @Override
@@ -956,10 +919,14 @@ public class Http2ConnectionHandler extends ByteToMessageDecoder implements Http
                 return;
             }
             closed = true;
-            if (promise == null) {
-                ctx.close();
+            if (ctx.channel().isActive()) {
+                if (promise == null) {
+                    ctx.close();
+                } else {
+                    ctx.close().addListener(new PromiseNotifier<>(promise));
+                }
             } else {
-                ctx.close(promise);
+                promise.setSuccess();
             }
         }
     }

@@ -56,9 +56,6 @@ public class RedisEncoderBenchmark extends AbstractMicrobenchmark {
     @Param({ "true", "false" })
     public boolean pooledAllocator;
 
-    @Param({ "true", "false" })
-    public boolean voidPromise;
-
     @Param({ "50", "200", "1000" })
     public int arraySize;
 
@@ -91,11 +88,7 @@ public class RedisEncoderBenchmark extends AbstractMicrobenchmark {
     }
 
     @Benchmark
-    public void writeArray() throws Exception {
-        encoder.write(context, redisArray.retain(), newPromise());
-    }
-
-    private ChannelPromise newPromise() {
-        return voidPromise ? context.voidPromise() : context.newPromise();
+    public void writeArray() {
+        encoder.write(context, redisArray.retain());
     }
 }

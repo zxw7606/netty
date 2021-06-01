@@ -18,10 +18,10 @@ package io.netty.handler.logging;
 import io.netty.buffer.ByteBufConvertible;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
 import io.netty.util.internal.logging.InternalLogLevel;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
@@ -213,45 +213,45 @@ public class LoggingHandler implements ChannelHandler {
     }
 
     @Override
-    public void bind(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise) throws Exception {
+    public ChannelFuture bind(ChannelHandlerContext ctx, SocketAddress localAddress) {
         if (logger.isEnabled(internalLevel)) {
             logger.log(internalLevel, format(ctx, "BIND", localAddress));
         }
-        ctx.bind(localAddress, promise);
+        return ctx.bind(localAddress);
     }
 
     @Override
-    public void connect(
+    public ChannelFuture connect(
             ChannelHandlerContext ctx,
-            SocketAddress remoteAddress, SocketAddress localAddress, ChannelPromise promise) throws Exception {
+            SocketAddress remoteAddress, SocketAddress localAddress) {
         if (logger.isEnabled(internalLevel)) {
             logger.log(internalLevel, format(ctx, "CONNECT", remoteAddress, localAddress));
         }
-        ctx.connect(remoteAddress, localAddress, promise);
+        return ctx.connect(remoteAddress, localAddress);
     }
 
     @Override
-    public void disconnect(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+    public ChannelFuture disconnect(ChannelHandlerContext ctx) {
         if (logger.isEnabled(internalLevel)) {
             logger.log(internalLevel, format(ctx, "DISCONNECT"));
         }
-        ctx.disconnect(promise);
+        return ctx.disconnect();
     }
 
     @Override
-    public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+    public ChannelFuture close(ChannelHandlerContext ctx) {
         if (logger.isEnabled(internalLevel)) {
             logger.log(internalLevel, format(ctx, "CLOSE"));
         }
-        ctx.close(promise);
+        return ctx.close();
     }
 
     @Override
-    public void deregister(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+    public ChannelFuture deregister(ChannelHandlerContext ctx) {
         if (logger.isEnabled(internalLevel)) {
             logger.log(internalLevel, format(ctx, "DEREGISTER"));
         }
-        ctx.deregister(promise);
+        return ctx.deregister();
     }
 
     @Override
@@ -271,11 +271,11 @@ public class LoggingHandler implements ChannelHandler {
     }
 
     @Override
-    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+    public ChannelFuture write(ChannelHandlerContext ctx, Object msg) {
         if (logger.isEnabled(internalLevel)) {
             logger.log(internalLevel, format(ctx, "WRITE", msg));
         }
-        ctx.write(msg, promise);
+        return ctx.write(msg);
     }
 
     @Override
@@ -287,7 +287,7 @@ public class LoggingHandler implements ChannelHandler {
     }
 
     @Override
-    public void flush(ChannelHandlerContext ctx) throws Exception {
+    public void flush(ChannelHandlerContext ctx) {
         if (logger.isEnabled(internalLevel)) {
             logger.log(internalLevel, format(ctx, "FLUSH"));
         }
@@ -326,7 +326,7 @@ public class LoggingHandler implements ChannelHandler {
 
     /**
      * Formats an event and returns the formatted message.  This method is currently only used for formatting
-     * {@link ChannelHandler#connect(ChannelHandlerContext, SocketAddress, SocketAddress, ChannelPromise)}.
+     * {@link ChannelHandler#connect(ChannelHandlerContext, SocketAddress, SocketAddress)}.
      *
      * @param eventName the name of the event
      * @param firstArg  the first argument of the event

@@ -431,53 +431,8 @@ abstract class AbstractHttp2StreamChannel extends DefaultAttributeMap implements
     }
 
     @Override
-    public ChannelFuture bind(SocketAddress localAddress, ChannelPromise promise) {
-        return pipeline().bind(localAddress, promise);
-    }
-
-    @Override
-    public ChannelFuture connect(SocketAddress remoteAddress, ChannelPromise promise) {
-        return pipeline().connect(remoteAddress, promise);
-    }
-
-    @Override
-    public ChannelFuture connect(SocketAddress remoteAddress, SocketAddress localAddress, ChannelPromise promise) {
-        return pipeline().connect(remoteAddress, localAddress, promise);
-    }
-
-    @Override
-    public ChannelFuture disconnect(ChannelPromise promise) {
-        return pipeline().disconnect(promise);
-    }
-
-    @Override
-    public ChannelFuture close(ChannelPromise promise) {
-        return pipeline().close(promise);
-    }
-
-    @Override
-    public ChannelFuture register(ChannelPromise promise) {
-        return pipeline().register(promise);
-    }
-
-    @Override
-    public ChannelFuture deregister(ChannelPromise promise) {
-        return pipeline().deregister(promise);
-    }
-
-    @Override
     public ChannelFuture write(Object msg) {
         return pipeline().write(msg);
-    }
-
-    @Override
-    public ChannelFuture write(Object msg, ChannelPromise promise) {
-        return pipeline().write(msg, promise);
-    }
-
-    @Override
-    public ChannelFuture writeAndFlush(Object msg, ChannelPromise promise) {
-        return pipeline().writeAndFlush(msg, promise);
     }
 
     @Override
@@ -503,11 +458,6 @@ abstract class AbstractHttp2StreamChannel extends DefaultAttributeMap implements
     @Override
     public ChannelFuture newFailedFuture(Throwable cause) {
         return pipeline().newFailedFuture(cause);
-    }
-
-    @Override
-    public ChannelPromise voidPromise() {
-        return pipeline().voidPromise();
     }
 
     @Override
@@ -1086,9 +1036,7 @@ abstract class AbstractHttp2StreamChannel extends DefaultAttributeMap implements
     }
 
     protected ChannelFuture write0(ChannelHandlerContext ctx, Object msg) {
-        ChannelPromise promise = ctx.newPromise();
-        ctx.write(msg, promise);
-        return promise;
+        return ctx.write(msg);
     }
 
     protected abstract boolean isParentReadInProgress();
