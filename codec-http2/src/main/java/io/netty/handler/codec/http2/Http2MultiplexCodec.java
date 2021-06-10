@@ -283,7 +283,7 @@ public class Http2MultiplexCodec extends Http2FrameCodec {
     }
 
     final void flush0(ChannelHandlerContext ctx) {
-        flush(ctx);
+        flush(ctx, );
     }
 
     private final class Http2MultiplexCodecStreamChannel extends AbstractHttp2StreamChannel {

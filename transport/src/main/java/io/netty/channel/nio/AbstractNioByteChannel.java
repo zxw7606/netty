@@ -23,6 +23,7 @@ import io.netty.channel.ChannelConfig;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelMetadata;
 import io.netty.channel.ChannelOutboundBuffer;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoop;
 import io.netty.channel.FileRegion;
@@ -102,7 +103,7 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
                     shutdownInput();
                     pipeline.fireUserEventTriggered(ChannelInputShutdownEvent.INSTANCE);
                 } else {
-                    close(newPromise());
+                    close(ChannelOutboundInvokerCallback.noop());
                 }
             } else {
                 inputClosedSeenErrorOnRead = true;
@@ -226,7 +227,6 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
 
             final int localFlushedAmount = doWriteBytes(buf);
             if (localFlushedAmount > 0) {
-                in.progress(localFlushedAmount);
                 if (!buf.isReadable()) {
                     in.remove();
                 }
@@ -241,7 +241,6 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
 
             long localFlushedAmount = doWriteFileRegion(region);
             if (localFlushedAmount > 0) {
-                in.progress(localFlushedAmount);
                 if (region.transferred() >= region.count()) {
                     in.remove();
                 }

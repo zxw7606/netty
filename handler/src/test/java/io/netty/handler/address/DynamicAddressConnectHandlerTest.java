@@ -17,7 +17,7 @@ package io.netty.handler.address;
 
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.Test;
 
@@ -39,13 +39,13 @@ public class DynamicAddressConnectHandlerTest {
         EmbeddedChannel channel = new EmbeddedChannel(new ChannelHandler() {
             @Override
             public void connect(ChannelHandlerContext ctx, SocketAddress remoteAddress,
-                                SocketAddress localAddress, ChannelPromise promise) {
+                                SocketAddress localAddress, ChannelOutboundInvokerCallback callback) {
                 try {
                     assertSame(REMOTE_NEW, remoteAddress);
                     assertSame(LOCAL_NEW, localAddress);
-                    promise.setSuccess();
+                    callback.setSuccess();
                 } catch (Throwable cause) {
-                    promise.setFailure(cause);
+                    callback.setFailure(cause);
                 }
             }
         }, new DynamicAddressConnectHandler() {

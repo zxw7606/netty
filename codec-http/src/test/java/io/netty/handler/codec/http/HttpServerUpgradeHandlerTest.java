@@ -18,6 +18,7 @@ package io.netty.handler.codec.http;
 import java.util.Collection;
 import java.util.Collections;
 
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import org.junit.Test;
 
 import io.netty.buffer.ByteBuf;
@@ -25,7 +26,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler.UpgradeCodec;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler.UpgradeCodecFactory;
@@ -94,13 +94,13 @@ public class HttpServerUpgradeHandlerTest {
             }
 
             @Override
-            public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise) {
+            public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelOutboundInvokerCallback callback) {
                 // We ensure that we're in the read call and defer the write so we can
                 // make sure the pipeline was reformed irrespective of the flush completing.
                 assertTrue(inReadCall);
                 writeUpgradeMessage = true;
-                ctx.channel().eventLoop().execute(() -> ctx.write(msg, promise));
-                promise.addListener((ChannelFutureListener) future -> writeFlushed = true);
+                ctx.channel().eventLoop().execute(() -> ctx.write(msg, callback));
+                callback.addListener((ChannelFutureListener) future -> writeFlushed = true);
             }
         };
 

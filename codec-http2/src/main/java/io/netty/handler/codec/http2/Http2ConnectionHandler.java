@@ -20,6 +20,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -179,7 +180,7 @@ public class Http2ConnectionHandler extends ByteToMessageDecoder implements Http
     }
 
     @Override
-    public void flush(ChannelHandlerContext ctx) {
+    public void flush(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) {
         try {
             // Trigger pending writes in the remote flow controller.
             encoder.flowController().writePendingBytes();
@@ -422,7 +423,7 @@ public class Http2ConnectionHandler extends ByteToMessageDecoder implements Http
         // the allocation and write loop. Reentering the event loop will lead to over or illegal allocation.
         try {
             if (ctx.channel().isWritable()) {
-                flush(ctx);
+                flush(ctx, ChannelOutboundInvokerCallback.noop());
             }
             encoder.flowController().channelWritabilityChanged();
         } finally {
@@ -436,30 +437,30 @@ public class Http2ConnectionHandler extends ByteToMessageDecoder implements Http
     }
 
     @Override
-    public void bind(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise) throws Exception {
-        ctx.bind(localAddress, promise);
+    public void bind(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.bind(localAddress, callback);
     }
 
     @Override
     public void connect(ChannelHandlerContext ctx, SocketAddress remoteAddress, SocketAddress localAddress,
-                        ChannelPromise promise) throws Exception {
-        ctx.connect(remoteAddress, localAddress, promise);
+                        ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.connect(remoteAddress, localAddress, callback);
     }
 
     @Override
-    public void disconnect(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        ctx.disconnect(promise);
+    public void disconnect(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.disconnect(callback);
     }
 
     @Override
-    public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+    public void close(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
         if (decoupleCloseAndGoAway) {
-            ctx.close(promise);
+            ctx.close(callback);
             return;
         }
         // Avoid NotYetConnectedException and avoid sending before connection preface
         if (!ctx.channel().isActive() || !prefaceSent()) {
-            ctx.close(promise);
+            ctx.close(callback);
             return;
         }
 
@@ -470,7 +471,7 @@ public class Http2ConnectionHandler extends ByteToMessageDecoder implements Http
         // https://github.com/netty/netty/issues/5307
         ChannelFuture f = connection().goAwaySent() ? ctx.write(EMPTY_BUFFER) : goAway(ctx, null, ctx.newPromise());
         ctx.flush();
-        doGracefulShutdown(ctx, f, promise);
+        doGracefulShutdown(ctx, f, ctx.newPromise().addCallback(callback));
     }
 
     private ChannelFutureListener newClosingChannelFutureListener(
@@ -508,23 +509,23 @@ public class Http2ConnectionHandler extends ByteToMessageDecoder implements Http
     }
 
     @Override
-    public void register(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        ctx.register(promise);
+    public void register(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.register(callback);
     }
 
     @Override
-    public void deregister(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        ctx.deregister(promise);
+    public void deregister(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.deregister(callback);
     }
 
     @Override
-    public void read(ChannelHandlerContext ctx) throws Exception {
-        ctx.read();
+    public void read(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.read(callback);
     }
 
     @Override
-    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-        ctx.write(msg, promise);
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.write(msg, callback);
     }
 
     @Override
@@ -535,7 +536,7 @@ public class Http2ConnectionHandler extends ByteToMessageDecoder implements Http
             // First call channelReadComplete0(...) as this may produce more data that we want to flush
             channelReadComplete0(ctx);
         } finally {
-            flush(ctx);
+            flush(ctx, ChannelOutboundInvokerCallback.noop());
         }
     }
 
@@ -956,7 +957,7 @@ public class Http2ConnectionHandler extends ByteToMessageDecoder implements Http
             if (promise == null) {
                 ctx.close();
             } else {
-                ctx.close(promise);
+                ctx.close(promise.asOutboundInvokerCallback());
             }
         }
     }

@@ -18,7 +18,7 @@ package io.netty.handler.address;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.resolver.AddressResolver;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.util.concurrent.FutureListener;
@@ -28,8 +28,8 @@ import java.net.SocketAddress;
 
 /**
  * {@link ChannelHandler} which will resolve the {@link SocketAddress} that is passed to
- * {@link #connect(ChannelHandlerContext, SocketAddress, SocketAddress, ChannelPromise)} if it is not already resolved
- * and the {@link AddressResolver} supports the type of {@link SocketAddress}.
+ * {@link ChannelHandler#connect(ChannelHandlerContext, SocketAddress, SocketAddress, ChannelOutboundInvokerCallback)}
+ * if it is not already resolved and the {@link AddressResolver} supports the type of {@link SocketAddress}.
  */
 @Sharable
 public class ResolveAddressHandler implements ChannelHandler {
@@ -42,20 +42,20 @@ public class ResolveAddressHandler implements ChannelHandler {
 
     @Override
     public void connect(final ChannelHandlerContext ctx, SocketAddress remoteAddress,
-                        final SocketAddress localAddress, final ChannelPromise promise)  {
+                        final SocketAddress localAddress, final ChannelOutboundInvokerCallback callback)  {
         AddressResolver<? extends SocketAddress> resolver = resolverGroup.getResolver(ctx.executor());
         if (resolver.isSupported(remoteAddress) && !resolver.isResolved(remoteAddress)) {
             resolver.resolve(remoteAddress).addListener((FutureListener<SocketAddress>) future -> {
                 Throwable cause = future.cause();
                 if (cause != null) {
-                    promise.setFailure(cause);
+                    callback.onError(cause);
                 } else {
-                    ctx.connect(future.getNow(), localAddress, promise);
+                    ctx.connect(future.getNow(), localAddress, callback);
                 }
                 ctx.pipeline().remove(ResolveAddressHandler.this);
             });
         } else {
-            ctx.connect(remoteAddress, localAddress, promise);
+            ctx.connect(remoteAddress, localAddress, callback);
             ctx.pipeline().remove(this);
         }
     }

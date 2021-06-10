@@ -17,6 +17,7 @@
 package io.netty.handler.codec;
 
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -37,7 +38,7 @@ public class MessageAggregatorTest {
         int value;
 
         @Override
-        public void read(ChannelHandlerContext ctx) throws Exception {
+        public void read(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
             value++;
             ctx.read();
         }

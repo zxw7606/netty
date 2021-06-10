@@ -829,106 +829,70 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     }
 
     @Override
-    public final ChannelFuture bind(SocketAddress localAddress) {
-        return tail.bind(localAddress);
-    }
-
-    @Override
-    public final ChannelFuture connect(SocketAddress remoteAddress) {
-        return tail.connect(remoteAddress);
-    }
-
-    @Override
-    public final ChannelFuture connect(SocketAddress remoteAddress, SocketAddress localAddress) {
-        return tail.connect(remoteAddress, localAddress);
-    }
-
-    @Override
-    public final ChannelFuture disconnect() {
-        return tail.disconnect();
-    }
-
-    @Override
-    public final ChannelFuture close() {
-        return tail.close();
-    }
-
-    @Override
-    public final ChannelFuture register() {
-        return tail.register();
-    }
-
-    @Override
-    public final ChannelFuture deregister() {
-        return tail.deregister();
-    }
-
-    @Override
-    public final ChannelPipeline flush() {
-        tail.flush();
+    public final ChannelPipeline flush(ChannelOutboundInvokerCallback callback) {
+        tail.flush(callback);
         return this;
     }
 
     @Override
-    public final ChannelFuture bind(SocketAddress localAddress, ChannelPromise promise) {
-        return tail.bind(localAddress, promise);
-    }
-
-    @Override
-    public final ChannelFuture connect(SocketAddress remoteAddress, ChannelPromise promise) {
-        return tail.connect(remoteAddress, promise);
-    }
-
-    @Override
-    public final ChannelFuture connect(
-            SocketAddress remoteAddress, SocketAddress localAddress, ChannelPromise promise) {
-        return tail.connect(remoteAddress, localAddress, promise);
-    }
-
-    @Override
-    public final ChannelFuture disconnect(ChannelPromise promise) {
-        return tail.disconnect(promise);
-    }
-
-    @Override
-    public ChannelFuture close(ChannelPromise promise) {
-        return tail.close(promise);
-    }
-
-    @Override
-    public final ChannelFuture register(final ChannelPromise promise) {
-        return tail.register(promise);
-    }
-
-    @Override
-    public final ChannelFuture deregister(final ChannelPromise promise) {
-        return tail.deregister(promise);
-    }
-
-    @Override
-    public final ChannelPipeline read() {
-        tail.read();
+    public final ChannelPipeline bind(SocketAddress localAddress, ChannelOutboundInvokerCallback callback) {
+        tail.bind(localAddress, callback);
         return this;
     }
 
     @Override
-    public final ChannelFuture write(Object msg) {
-        return tail.write(msg);
+    public final ChannelPipeline connect(SocketAddress remoteAddress, ChannelOutboundInvokerCallback callback) {
+        tail.connect(remoteAddress, callback);
+        return this;
     }
 
     @Override
-    public final ChannelFuture write(Object msg, ChannelPromise promise) {
-        return tail.write(msg, promise);
+    public final ChannelPipeline connect(
+            SocketAddress remoteAddress, SocketAddress localAddress, ChannelOutboundInvokerCallback callback) {
+        tail.connect(remoteAddress, localAddress, callback);
+        return this;
     }
 
     @Override
-    public final ChannelFuture writeAndFlush(Object msg, ChannelPromise promise) {
-        return tail.writeAndFlush(msg, promise);
+    public final ChannelPipeline disconnect(ChannelOutboundInvokerCallback callback) {
+        tail.disconnect(callback);
+        return this;
     }
 
     @Override
-    public final ChannelFuture writeAndFlush(Object msg) {
-        return tail.writeAndFlush(msg);
+    public ChannelPipeline close(ChannelOutboundInvokerCallback callback) {
+        tail.close(callback);
+        return this;
+    }
+
+    @Override
+    public final ChannelPipeline register(ChannelOutboundInvokerCallback callback) {
+        tail.register(callback);
+        return this;
+    }
+
+    @Override
+    public final ChannelPipeline deregister(ChannelOutboundInvokerCallback callback) {
+        tail.deregister(callback);
+        return this;
+    }
+
+    @Override
+    public final ChannelPipeline read(ChannelOutboundInvokerCallback callback) {
+        tail.read(callback);
+        return this;
+    }
+
+    @Override
+    public final ChannelPipeline write(Object msg, ChannelOutboundInvokerCallback callback) {
+        tail.write(msg, callback);
+        return this;
+    }
+
+    @Override
+    public final ChannelPipeline writeAndFlush(Object msg, ChannelOutboundInvokerCallback callback) {
+        tail.writeAndFlush(msg, callback);
+        return this;
     }
 
     @Override
@@ -1085,51 +1049,51 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
         @Override
         public void bind(
-                ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise) {
-            ctx.channel().unsafe().bind(localAddress, promise);
+                ChannelHandlerContext ctx, SocketAddress localAddress, ChannelOutboundInvokerCallback callback) {
+            ctx.channel().unsafe().bind(localAddress, callback);
         }
 
         @Override
         public void connect(
                 ChannelHandlerContext ctx,
                 SocketAddress remoteAddress, SocketAddress localAddress,
-                ChannelPromise promise) {
-            ctx.channel().unsafe().connect(remoteAddress, localAddress, promise);
+                ChannelOutboundInvokerCallback callback) {
+            ctx.channel().unsafe().connect(remoteAddress, localAddress, callback);
         }
 
         @Override
-        public void disconnect(ChannelHandlerContext ctx, ChannelPromise promise) {
-            ctx.channel().unsafe().disconnect(promise);
+        public void disconnect(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) {
+            ctx.channel().unsafe().disconnect(callback);
         }
 
         @Override
-        public void close(ChannelHandlerContext ctx, ChannelPromise promise) {
-            ctx.channel().unsafe().close(promise);
+        public void close(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) {
+            ctx.channel().unsafe().close(callback);
         }
 
         @Override
-        public void register(ChannelHandlerContext ctx, ChannelPromise promise) {
-            ctx.channel().unsafe().register(promise);
+        public void register(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) {
+            ctx.channel().unsafe().register(callback);
         }
 
         @Override
-        public void deregister(ChannelHandlerContext ctx, ChannelPromise promise) {
-            ctx.channel().unsafe().deregister(promise);
+        public void deregister(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) {
+            ctx.channel().unsafe().deregister(callback);
         }
 
         @Override
-        public void read(ChannelHandlerContext ctx) {
-            ctx.channel().unsafe().beginRead();
+        public void read(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) {
+            ctx.channel().unsafe().beginRead(callback);
         }
 
         @Override
-        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
-            ctx.channel().unsafe().write(msg, promise);
+        public void write(ChannelHandlerContext ctx, Object msg, ChannelOutboundInvokerCallback callback) {
+            ctx.channel().unsafe().write(msg, callback);
         }
 
         @Override
-        public void flush(ChannelHandlerContext ctx) {
-            ctx.channel().unsafe().flush();
+        public void flush(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) {
+            ctx.channel().unsafe().flush(callback);
         }
     }
 }

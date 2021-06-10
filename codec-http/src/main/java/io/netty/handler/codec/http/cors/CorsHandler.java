@@ -19,7 +19,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
@@ -215,7 +215,7 @@ public class CorsHandler implements ChannelHandler {
     }
 
     @Override
-    public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise)
+    public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelOutboundInvokerCallback callback)
             throws Exception {
         if (config != null && config.isCorsSupportEnabled() && msg instanceof HttpResponse) {
             final HttpResponse response = (HttpResponse) msg;
@@ -224,7 +224,7 @@ public class CorsHandler implements ChannelHandler {
                 setExposeHeaders(response);
             }
         }
-        ctx.write(msg, promise);
+        ctx.write(msg, callback);
     }
 
     private static void forbidden(final ChannelHandlerContext ctx, final HttpRequest request) {

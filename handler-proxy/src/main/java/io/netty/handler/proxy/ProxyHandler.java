@@ -22,6 +22,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.PendingWriteQueue;
 import io.netty.util.ReferenceCountUtil;
@@ -167,15 +168,15 @@ public abstract class ProxyHandler implements ChannelHandler {
     @Override
     public final void connect(
             ChannelHandlerContext ctx, SocketAddress remoteAddress, SocketAddress localAddress,
-            ChannelPromise promise) throws Exception {
+            ChannelOutboundInvokerCallback callback) throws Exception {
 
         if (destinationAddress != null) {
-            promise.setFailure(new ConnectionPendingException());
+            callback.setFailure(new ConnectionPendingException());
             return;
         }
 
         destinationAddress = remoteAddress;
-        ctx.connect(proxyAddress, localAddress, promise);
+        ctx.connect(proxyAddress, localAddress, callback);
     }
 
     @Override
@@ -394,17 +395,17 @@ public abstract class ProxyHandler implements ChannelHandler {
     }
 
     @Override
-    public final void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+    public final void write(ChannelHandlerContext ctx, Object msg, ChannelOutboundInvokerCallback callback) throws Exception {
         if (finished) {
             writePendingWrites();
-            ctx.write(msg, promise);
+            ctx.write(msg, callback);
         } else {
-            addPendingWrite(ctx, msg, promise);
+            addPendingWrite(ctx, msg, callback);
         }
     }
 
     @Override
-    public final void flush(ChannelHandlerContext ctx) throws Exception {
+    public final void flush(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
         if (finished) {
             writePendingWrites();
             ctx.flush();

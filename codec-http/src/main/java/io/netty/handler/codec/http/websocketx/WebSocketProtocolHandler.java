@@ -17,6 +17,7 @@ package io.netty.handler.codec.http.websocketx;
 
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.ChannelPromiseNotifier;
 import io.netty.handler.codec.MessageToMessageDecoder;
@@ -82,29 +83,29 @@ abstract class WebSocketProtocolHandler extends MessageToMessageDecoder<WebSocke
     }
 
     @Override
-    public void close(final ChannelHandlerContext ctx, final ChannelPromise promise) throws Exception {
+    public void close(final ChannelHandlerContext ctx, final ChannelOutboundInvokerCallback callback) throws Exception {
         if (closeStatus == null || !ctx.channel().isActive()) {
-            ctx.close(promise);
+            ctx.close(callback);
         } else {
             if (closeSent == null) {
                 write(ctx, new CloseWebSocketFrame(closeStatus), ctx.newPromise());
             }
-            flush(ctx);
+            flush(ctx, );
             applyCloseSentTimeout(ctx);
-            closeSent.addListener(future -> ctx.close(promise));
+            closeSent.addListener(future -> ctx.close(callback));
         }
     }
 
     @Override
-    public void write(final ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+    public void write(final ChannelHandlerContext ctx, Object msg, ChannelOutboundInvokerCallback callback) throws Exception {
         if (closeSent != null) {
             ReferenceCountUtil.release(msg);
-            promise.setFailure(new ClosedChannelException());
+            callback.setFailure(new ClosedChannelException());
         } else if (msg instanceof CloseWebSocketFrame) {
-            closeSent(promise);
+            closeSent(callback);
             ctx.write(msg).addListener(new ChannelPromiseNotifier(false, closeSent));
         } else {
-            ctx.write(msg, promise);
+            ctx.write(msg, callback);
         }
     }
 

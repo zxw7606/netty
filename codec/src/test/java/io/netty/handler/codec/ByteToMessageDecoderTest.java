@@ -24,6 +24,7 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.buffer.UnpooledHeapByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.channel.embedded.EmbeddedChannel;
 
 import io.netty.channel.socket.ChannelInputShutdownEvent;
@@ -438,7 +439,7 @@ public class ByteToMessageDecoderTest {
             private int readsTriggered;
 
             @Override
-            public void read(ChannelHandlerContext ctx) {
+            public void read(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) {
                 readsTriggered++;
                 ctx.read();
             }

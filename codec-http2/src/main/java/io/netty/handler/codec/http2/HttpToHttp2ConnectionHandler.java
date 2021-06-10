@@ -17,7 +17,7 @@ package io.netty.handler.codec.http2;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
 import io.netty.handler.codec.http.FullHttpMessage;
 import io.netty.handler.codec.http.HttpContent;
@@ -77,16 +77,16 @@ public class HttpToHttp2ConnectionHandler extends Http2ConnectionHandler {
      * Handles conversion of {@link HttpMessage} and {@link HttpContent} to HTTP/2 frames.
      */
     @Override
-    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelOutboundInvokerCallback callback) {
 
         if (!(msg instanceof HttpMessage || msg instanceof HttpContent)) {
-            ctx.write(msg, promise);
+            ctx.write(msg, callback);
             return;
         }
 
         boolean release = true;
         SimpleChannelPromiseAggregator promiseAggregator =
-                new SimpleChannelPromiseAggregator(promise, ctx.channel(), ctx.executor());
+                new SimpleChannelPromiseAggregator(callback, ctx.channel(), ctx.executor());
         try {
             Http2ConnectionEncoder encoder = encoder();
             boolean endStream = false;

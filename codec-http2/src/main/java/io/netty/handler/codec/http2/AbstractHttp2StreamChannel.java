@@ -25,6 +25,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelId;
 import io.netty.channel.ChannelMetadata;
 import io.netty.channel.ChannelOutboundBuffer;
+import io.netty.channel.ChannelOutboundInvoker;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.DefaultChannelConfig;
@@ -156,7 +158,7 @@ abstract class AbstractHttp2StreamChannel extends DefaultAttributeMap implements
     /**
      * This variable represents if a read is in progress for the current channel or was requested.
      * Note that depending upon the {@link RecvByteBufAllocator} behavior a read may extend beyond the
-     * {@link Http2ChannelUnsafe#beginRead()} method scope. The {@link Http2ChannelUnsafe#beginRead()} loop may
+     * {@link Unsafe#beginRead(ChannelOutboundInvokerCallback)} method scope. The {@link Unsafe#beginRead(ChannelOutboundInvokerCallback)} loop may
      * drain all pending data, and then if the parent channel is reading this channel may still accept frames.
      */
     private ReadStatus readStatus = ReadStatus.IDLE;
@@ -429,38 +431,38 @@ abstract class AbstractHttp2StreamChannel extends DefaultAttributeMap implements
     }
 
     @Override
-    public ChannelFuture bind(SocketAddress localAddress, ChannelPromise promise) {
-        return pipeline().bind(localAddress, promise);
+    public ChannelOutboundInvoker bind(SocketAddress localAddress, ChannelOutboundInvokerCallback callback) {
+        return pipeline().bind(localAddress, callback);
     }
 
     @Override
-    public ChannelFuture connect(SocketAddress remoteAddress, ChannelPromise promise) {
-        return pipeline().connect(remoteAddress, promise);
+    public ChannelOutboundInvoker connect(SocketAddress remoteAddress, ChannelOutboundInvokerCallback callback) {
+        return pipeline().connect(remoteAddress, callback);
     }
 
     @Override
-    public ChannelFuture connect(SocketAddress remoteAddress, SocketAddress localAddress, ChannelPromise promise) {
-        return pipeline().connect(remoteAddress, localAddress, promise);
+    public ChannelOutboundInvoker connect(SocketAddress remoteAddress, SocketAddress localAddress, ChannelOutboundInvokerCallback callback) {
+        return pipeline().connect(remoteAddress, localAddress, callback);
     }
 
     @Override
-    public ChannelFuture disconnect(ChannelPromise promise) {
-        return pipeline().disconnect(promise);
+    public ChannelFuture disconnect(ChannelOutboundInvokerCallback callback) {
+        return pipeline().disconnect(callback);
     }
 
     @Override
-    public ChannelFuture close(ChannelPromise promise) {
-        return pipeline().close(promise);
+    public ChannelOutboundInvoker close(ChannelOutboundInvokerCallback callback) {
+        return pipeline().close(callback);
     }
 
     @Override
-    public ChannelFuture register(ChannelPromise promise) {
-        return pipeline().register(promise);
+    public ChannelOutboundInvoker register(ChannelOutboundInvokerCallback callback) {
+        return pipeline().register(callback);
     }
 
     @Override
-    public ChannelFuture deregister(ChannelPromise promise) {
-        return pipeline().deregister(promise);
+    public ChannelOutboundInvoker deregister(ChannelOutboundInvokerCallback callback) {
+        return pipeline().deregister(callback);
     }
 
     @Override
@@ -469,13 +471,13 @@ abstract class AbstractHttp2StreamChannel extends DefaultAttributeMap implements
     }
 
     @Override
-    public ChannelFuture write(Object msg, ChannelPromise promise) {
-        return pipeline().write(msg, promise);
+    public ChannelOutboundInvoker write(Object msg, ChannelOutboundInvokerCallback callback) {
+        return pipeline().write(msg, callback);
     }
 
     @Override
-    public ChannelFuture writeAndFlush(Object msg, ChannelPromise promise) {
-        return pipeline().writeAndFlush(msg, promise);
+    public ChannelOutboundInvoker writeAndFlush(Object msg, ChannelOutboundInvokerCallback callback) {
+        return pipeline().writeAndFlush(msg, callback);
     }
 
     @Override
@@ -568,11 +570,11 @@ abstract class AbstractHttp2StreamChannel extends DefaultAttributeMap implements
 
         @Override
         public void connect(final SocketAddress remoteAddress,
-                            SocketAddress localAddress, final ChannelPromise promise) {
-            if (!promise.setUncancellable()) {
+                            SocketAddress localAddress, final ChannelOutboundInvokerCallback callback) {
+            if (!callback.setUncancellable()) {
                 return;
             }
-            promise.setFailure(new UnsupportedOperationException());
+            callback.setFailure(new UnsupportedOperationException());
         }
 
         @Override
@@ -595,18 +597,18 @@ abstract class AbstractHttp2StreamChannel extends DefaultAttributeMap implements
         }
 
         @Override
-        public void register(ChannelPromise promise) {
-            if (!promise.setUncancellable()) {
+        public void register(ChannelOutboundInvokerCallback callback) {
+            if (!callback.setUncancellable()) {
                 return;
             }
             if (registered) {
-                promise.setFailure(new UnsupportedOperationException("Re-register is not supported"));
+                callback.setFailure(new UnsupportedOperationException("Re-register is not supported"));
                 return;
             }
 
             registered = true;
 
-            promise.setSuccess();
+            callback.setSuccess();
 
             pipeline().fireChannelRegistered();
             if (isActive()) {
@@ -618,30 +620,30 @@ abstract class AbstractHttp2StreamChannel extends DefaultAttributeMap implements
         }
 
         @Override
-        public void bind(SocketAddress localAddress, ChannelPromise promise) {
-            if (!promise.setUncancellable()) {
+        public void bind(SocketAddress localAddress, ChannelOutboundInvokerCallback callback) {
+            if (!callback.setUncancellable()) {
                 return;
             }
-            promise.setFailure(new UnsupportedOperationException());
+            callback.setFailure(new UnsupportedOperationException());
         }
 
         @Override
-        public void disconnect(ChannelPromise promise) {
-            close(promise);
+        public void disconnect(ChannelOutboundInvokerCallback callback) {
+            close(callback);
         }
 
         @Override
-        public void close(final ChannelPromise promise) {
-            if (!promise.setUncancellable()) {
+        public void close(final ChannelOutboundInvokerCallback callback) {
+            if (!callback.setUncancellable()) {
                 return;
             }
             if (closeInitiated) {
                 if (closePromise.isDone()) {
                     // Closed already.
-                    promise.setSuccess();
+                    callback.setSuccess();
                 } else  {
                     // This means close() was called before so we just register a listener and return
-                    closePromise.addListener((ChannelFutureListener) future -> promise.setSuccess());
+                    closePromise.addListener((ChannelFutureListener) future -> callback.setSuccess());
                 }
                 return;
             }
@@ -676,7 +678,7 @@ abstract class AbstractHttp2StreamChannel extends DefaultAttributeMap implements
             // The promise should be notified before we call fireChannelInactive().
             outboundClosed = true;
             closePromise.setSuccess();
-            promise.setSuccess();
+            callback.setSuccess();
 
             fireChannelInactiveAndDeregister(newPromise(), wasActive);
         }
@@ -687,8 +689,8 @@ abstract class AbstractHttp2StreamChannel extends DefaultAttributeMap implements
         }
 
         @Override
-        public void deregister(ChannelPromise promise) {
-            fireChannelInactiveAndDeregister(promise, false);
+        public void deregister(ChannelOutboundInvokerCallback callback) {
+            fireChannelInactiveAndDeregister(callback, false);
         }
 
         private void fireChannelInactiveAndDeregister(final ChannelPromise promise,
@@ -749,7 +751,7 @@ abstract class AbstractHttp2StreamChannel extends DefaultAttributeMap implements
         }
 
         @Override
-        public void beginRead() {
+        public void beginRead(ChannelOutboundInvokerCallback callback) {
             if (!isActive()) {
                 return;
             }
@@ -882,9 +884,9 @@ abstract class AbstractHttp2StreamChannel extends DefaultAttributeMap implements
         }
 
         @Override
-        public void write(Object msg, final ChannelPromise promise) {
+        public void write(Object msg, final ChannelOutboundInvokerCallback callback) {
             // After this point its not possible to cancel a write anymore.
-            if (!promise.setUncancellable()) {
+            if (!callback.setUncancellable()) {
                 ReferenceCountUtil.release(msg);
                 return;
             }
@@ -893,23 +895,23 @@ abstract class AbstractHttp2StreamChannel extends DefaultAttributeMap implements
                     // Once the outbound side was closed we should not allow header / data frames
                     outboundClosed && (msg instanceof Http2HeadersFrame || msg instanceof Http2DataFrame)) {
                 ReferenceCountUtil.release(msg);
-                promise.setFailure(new ClosedChannelException());
+                callback.setFailure(new ClosedChannelException());
                 return;
             }
 
             try {
                 if (msg instanceof Http2StreamFrame) {
                     Http2StreamFrame frame = validateStreamFrame((Http2StreamFrame) msg).stream(stream());
-                    writeHttp2StreamFrame(frame, promise);
+                    writeHttp2StreamFrame(frame, callback);
                 } else {
                     String msgStr = msg.toString();
                     ReferenceCountUtil.release(msg);
-                    promise.setFailure(new IllegalArgumentException(
+                    callback.setFailure(new IllegalArgumentException(
                             "Message must be an " + StringUtil.simpleClassName(Http2StreamFrame.class) +
                                     ": " + msgStr));
                 }
             } catch (Throwable t) {
-                promise.tryFailure(t);
+                callback.tryFailure(t);
             }
         }
 
@@ -1002,7 +1004,7 @@ abstract class AbstractHttp2StreamChannel extends DefaultAttributeMap implements
         }
 
         @Override
-        public void flush() {
+        public void flush(ChannelOutboundInvokerCallback callback) {
             // If we are currently in the parent channel's read loop we should just ignore the flush.
             // We will ensure we trigger ctx.flush() after we processed all Channels later on and
             // so aggregate the flushes. This is done as ctx.flush() is expensive when as it may trigger an

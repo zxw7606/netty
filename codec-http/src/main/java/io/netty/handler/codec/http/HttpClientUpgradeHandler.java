@@ -15,7 +15,7 @@
 package io.netty.handler.codec.http;
 
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.util.AsciiString;
 
 import java.net.SocketAddress;
@@ -121,51 +121,51 @@ public class HttpClientUpgradeHandler extends HttpObjectAggregator {
     }
 
     @Override
-    public void bind(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise) throws Exception {
-        ctx.bind(localAddress, promise);
+    public void bind(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.bind(localAddress, callback);
     }
 
     @Override
     public void connect(ChannelHandlerContext ctx, SocketAddress remoteAddress, SocketAddress localAddress,
-                        ChannelPromise promise) throws Exception {
-        ctx.connect(remoteAddress, localAddress, promise);
+                        ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.connect(remoteAddress, localAddress, callback);
     }
 
     @Override
-    public void disconnect(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        ctx.disconnect(promise);
+    public void disconnect(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.disconnect(callback);
     }
 
     @Override
-    public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        ctx.close(promise);
+    public void close(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.close(callback);
     }
 
     @Override
-    public void register(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        ctx.register(promise);
+    public void register(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.register(callback);
     }
 
     @Override
-    public void deregister(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        ctx.deregister(promise);
+    public void deregister(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.deregister(callback);
     }
 
     @Override
-    public void read(ChannelHandlerContext ctx) throws Exception {
+    public void read(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
         ctx.read();
     }
 
     @Override
-    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelOutboundInvokerCallback callback)
             throws Exception {
         if (!(msg instanceof HttpRequest)) {
-            ctx.write(msg, promise);
+            ctx.write(msg, callback);
             return;
         }
 
         if (upgradeRequested) {
-            promise.setFailure(new IllegalStateException(
+            callback.setFailure(new IllegalStateException(
                     "Attempting to write HTTP request with upgrade in progress"));
             return;
         }
@@ -174,7 +174,7 @@ public class HttpClientUpgradeHandler extends HttpObjectAggregator {
         setUpgradeRequestHeaders(ctx, (HttpRequest) msg);
 
         // Continue writing the request.
-        ctx.write(msg, promise);
+        ctx.write(msg, callback);
 
         // Notify that the upgrade request was issued.
         ctx.fireUserEventTriggered(UpgradeEvent.UPGRADE_ISSUED);
@@ -182,7 +182,7 @@ public class HttpClientUpgradeHandler extends HttpObjectAggregator {
     }
 
     @Override
-    public void flush(ChannelHandlerContext ctx) throws Exception {
+    public void flush(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
         ctx.flush();
     }
 

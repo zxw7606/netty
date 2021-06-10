@@ -18,6 +18,7 @@ package io.netty.handler.codec;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.util.ReferenceCountUtil;
@@ -78,7 +79,8 @@ public abstract class MessageToMessageEncoder<I> extends ChannelHandlerAdapter {
     }
 
     @Override
-    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelOutboundInvokerCallback callback)
+            throws Exception {
         CodecOutputList out = null;
         try {
             if (acceptOutboundMessage(msg)) {
@@ -96,7 +98,7 @@ public abstract class MessageToMessageEncoder<I> extends ChannelHandlerAdapter {
                             StringUtil.simpleClassName(this) + " must produce at least one message.");
                 }
             } else {
-                ctx.write(msg, promise);
+                ctx.write(msg, callback);
             }
         } catch (EncoderException e) {
             throw e;
@@ -107,9 +109,9 @@ public abstract class MessageToMessageEncoder<I> extends ChannelHandlerAdapter {
                 try {
                     final int sizeMinusOne = out.size() - 1;
                     if (sizeMinusOne == 0) {
-                        ctx.write(out.getUnsafe(0), promise);
+                        ctx.write(out.getUnsafe(0), callback);
                     } else if (sizeMinusOne > 0) {
-                        writePromiseCombiner(ctx, out, promise);
+                        writePromiseCombiner(ctx, out, ctx.newPromise().addCallback(callback));
                     }
                 } finally {
                     out.recycle();

@@ -44,12 +44,12 @@ public class PendingWriteQueueTest {
     public void testRemoveAndWrite() {
         assertWrite(new TestHandler() {
             @Override
-            public void flush(ChannelHandlerContext ctx) throws Exception {
+            public void flush(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
                 assertFalse(ctx.channel().isWritable(), "Should not be writable anymore");
 
                 ChannelFuture future = queue.removeAndWrite();
                 future.addListener((ChannelFutureListener) future1 -> assertQueueEmpty(queue));
-                super.flush(ctx);
+                super.flush(ctx, callback);
             }
         }, 1);
     }
@@ -58,12 +58,12 @@ public class PendingWriteQueueTest {
     public void testRemoveAndWriteAll() {
         assertWrite(new TestHandler() {
             @Override
-            public void flush(ChannelHandlerContext ctx) throws Exception {
+            public void flush(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
                 assertFalse(ctx.channel().isWritable(), "Should not be writable anymore");
 
                 ChannelFuture future = queue.removeAndWriteAll();
                 future.addListener((ChannelFutureListener) future1 -> assertQueueEmpty(queue));
-                super.flush(ctx);
+                super.flush(ctx, callback);
             }
         }, 3);
     }
@@ -73,9 +73,9 @@ public class PendingWriteQueueTest {
         assertWriteFails(new TestHandler() {
 
             @Override
-            public void flush(ChannelHandlerContext ctx) throws Exception {
+            public void flush(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
                 queue.removeAndFail(new TestException());
-                super.flush(ctx);
+                super.flush(ctx, callback);
             }
         }, 1);
     }
@@ -84,9 +84,9 @@ public class PendingWriteQueueTest {
     public void testRemoveAndFailAll() {
         assertWriteFails(new TestHandler() {
             @Override
-            public void flush(ChannelHandlerContext ctx) throws Exception {
+            public void flush(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
                 queue.removeAndFailAll(new TestException());
-                super.flush(ctx);
+                super.flush(ctx, callback);
             }
         }, 3);
     }
@@ -229,9 +229,9 @@ public class PendingWriteQueueTest {
     public void testRemoveAndWriteAllReentrantWrite() {
         EmbeddedChannel channel = new EmbeddedChannel(new ChannelHandler() {
             @Override
-            public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
+            public void write(ChannelHandlerContext ctx, Object msg, ChannelOutboundInvokerCallback callback) {
                 // Convert to writeAndFlush(...) so the promise will be notified by the transport.
-                ctx.writeAndFlush(msg, promise);
+                ctx.writeAndFlush(msg, callback);
             }
         }, new ChannelHandler() { });
 
@@ -358,8 +358,9 @@ public class PendingWriteQueueTest {
         }
 
         @Override
-        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-            queue.add(msg, promise);
+        public void write(ChannelHandlerContext ctx, Object msg, ChannelOutboundInvokerCallback callback)
+                throws Exception {
+            queue.add(msg, ctx.newPromise().addCallback(callback));
             assertFalse(queue.isEmpty());
             assertEquals(++expectedSize, queue.size());
             assertNotNull(queue.current());

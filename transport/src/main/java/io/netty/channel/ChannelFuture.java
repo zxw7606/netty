@@ -173,6 +173,25 @@ public interface ChannelFuture extends Future<Void> {
     @Override
     ChannelFuture addListener(GenericFutureListener<? extends Future<? super Void>> listener);
 
+    /**
+     * Adds the specified {@link ChannelOutboundInvokerCallback} to this future. The specified callback is notified when
+     * this future is {@linkplain #isDone() done}. If this future is already
+     * completed, the specified callback is notified immediately.
+     *
+     * @param callback  the {@link ChannelOutboundInvokerCallback} to add.
+     * @return itself
+     */
+    default ChannelFuture addCallback(ChannelOutboundInvokerCallback callback) {
+        return addListener(f -> {
+            Throwable cause = f.cause();
+            if (cause != null) {
+                callback.onError(cause);
+            } else {
+                callback.onSuccess();
+            }
+        });
+    }
+
     @Override
     ChannelFuture sync() throws InterruptedException;
 

@@ -24,6 +24,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.util.ReferenceCountUtil;
@@ -114,12 +115,13 @@ public class ChunkedWriteHandler implements ChannelHandler {
     }
 
     @Override
-    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-        queue.add(new PendingWrite(msg, promise));
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelOutboundInvokerCallback callback)
+            throws Exception {
+        queue.add(new PendingWrite(msg, ctx.newPromise().addCallback(callback)));
     }
 
     @Override
-    public void flush(ChannelHandlerContext ctx) throws Exception {
+    public void flush(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
         doFlush(ctx);
     }
 
@@ -281,7 +283,7 @@ public class ChunkedWriteHandler implements ChannelHandler {
                 requiresFlush = false;
             } else {
                 queue.remove();
-                ctx.write(pendingMessage, currentWrite.promise);
+                ctx.write(pendingMessage, currentWrite.promise.asOutboundInvokerCallback());
                 requiresFlush = true;
             }
 

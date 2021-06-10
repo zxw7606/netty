@@ -81,8 +81,9 @@ public class CombinedChannelDuplexHandlerTest {
             () -> new CombinedChannelDuplexHandler<ChannelHandler, ChannelHandler>(
                   new ChannelHandler() {
                       @Override
-                      public void bind(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise) {
-                          promise.setFailure(new UnsupportedOperationException());
+                      public void bind(ChannelHandlerContext ctx, SocketAddress localAddress,
+                                       ChannelOutboundInvokerCallback callback) {
+                          callback.onError(new UnsupportedOperationException());
                       }
                   }, new ChannelHandler() { }));
     }
@@ -247,44 +248,47 @@ public class CombinedChannelDuplexHandlerTest {
             }
 
             @Override
-            public void bind(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise)
-                    throws Exception {
+            public void bind(ChannelHandlerContext ctx, SocketAddress localAddress,
+                             ChannelOutboundInvokerCallback callback) throws Exception {
                 queue.add(Event.BIND);
             }
 
             @Override
             public void connect(ChannelHandlerContext ctx, SocketAddress remoteAddress,
-                                SocketAddress localAddress, ChannelPromise promise) throws Exception {
+                                SocketAddress localAddress, ChannelOutboundInvokerCallback callback) throws Exception {
                 queue.add(Event.CONNECT);
             }
 
             @Override
-            public void disconnect(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+            public void disconnect(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback)
+                    throws Exception {
                 queue.add(Event.DISCONNECT);
             }
 
             @Override
-            public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+            public void close(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
                 queue.add(Event.CLOSE);
             }
 
             @Override
-            public void deregister(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+            public void deregister(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback)
+                    throws Exception {
                 queue.add(Event.DEREGISTER);
             }
 
             @Override
-            public void read(ChannelHandlerContext ctx) throws Exception {
+            public void read(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
                 queue.add(Event.READ);
             }
 
             @Override
-            public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+            public void write(ChannelHandlerContext ctx, Object msg, ChannelOutboundInvokerCallback callback)
+                    throws Exception {
                 queue.add(Event.WRITE);
             }
 
             @Override
-            public void flush(ChannelHandlerContext ctx) throws Exception {
+            public void flush(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
                 queue.add(Event.FLUSH);
             }
         };
@@ -337,34 +341,37 @@ public class CombinedChannelDuplexHandlerTest {
         ChannelHandler outboundHandler = new ChannelHandler() {
             @Override
             public void bind(ChannelHandlerContext ctx, SocketAddress localAddress,
-                             ChannelPromise promise) throws Exception {
-                promise.setSuccess();
+                             ChannelOutboundInvokerCallback callback) throws Exception {
+                callback.onSuccess();
             }
 
             @Override
             public void connect(ChannelHandlerContext ctx, SocketAddress remoteAddress,
-                                SocketAddress localAddress, ChannelPromise promise) throws Exception {
-                promise.setSuccess();
+                                SocketAddress localAddress, ChannelOutboundInvokerCallback callback) throws Exception {
+                callback.onSuccess();
             }
 
             @Override
-            public void disconnect(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-                promise.setSuccess();
+            public void disconnect(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback)
+                    throws Exception {
+                callback.onSuccess();
             }
 
             @Override
-            public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-                promise.setSuccess();
+            public void close(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+                callback.onSuccess();
             }
 
             @Override
-            public void deregister(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-                promise.setSuccess();
+            public void deregister(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback)
+                    throws Exception {
+                callback.onSuccess();
             }
 
             @Override
-            public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-                promise.setSuccess();
+            public void write(ChannelHandlerContext ctx, Object msg, ChannelOutboundInvokerCallback callback)
+                    throws Exception {
+                callback.onSuccess();
             }
         };
         EmbeddedChannel ch = new EmbeddedChannel(outboundHandler,
@@ -374,27 +381,27 @@ public class CombinedChannelDuplexHandlerTest {
         ChannelPipeline pipeline = ch.pipeline();
 
         ChannelPromise promise = ch.newPromise();
-        pipeline.connect(new InetSocketAddress(0), null, promise);
+        pipeline.connect(new InetSocketAddress(0), null, promise.asOutboundInvokerCallback());
         promise.syncUninterruptibly();
 
         promise = ch.newPromise();
-        pipeline.bind(new InetSocketAddress(0), promise);
+        pipeline.bind(new InetSocketAddress(0), promise.asOutboundInvokerCallback());
         promise.syncUninterruptibly();
 
         promise = ch.newPromise();
-        pipeline.close(promise);
+        pipeline.close(promise.asOutboundInvokerCallback());
         promise.syncUninterruptibly();
 
         promise = ch.newPromise();
-        pipeline.disconnect(promise);
+        pipeline.disconnect(promise.asOutboundInvokerCallback());
         promise.syncUninterruptibly();
 
         promise = ch.newPromise();
-        pipeline.write("test", promise);
+        pipeline.write("test", promise.asOutboundInvokerCallback());
         promise.syncUninterruptibly();
 
         promise = ch.newPromise();
-        pipeline.deregister(promise);
+        pipeline.deregister(promise.asOutboundInvokerCallback());
         promise.syncUninterruptibly();
         ch.finish();
     }

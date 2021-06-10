@@ -275,14 +275,15 @@ public interface ChannelHandler {
     /**
      * Called once a bind operation is made.
      *
-     * @param ctx           the {@link ChannelHandlerContext} for which the bind operation is made
-     * @param localAddress  the {@link SocketAddress} to which it should bound
-     * @param promise       the {@link ChannelPromise} to notify once the operation completes
-     * @throws Exception    thrown if an error occurs
+     * @param ctx               the {@link ChannelHandlerContext} for which the bind operation is made
+     * @param localAddress      the {@link SocketAddress} to which it should bound
+     * @param callback  the {@link ChannelOutboundInvokerCallback} to notify once the operation completes
+     * @throws Exception        thrown if an error occurs
      */
     @Skip
-    default void bind(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise) throws Exception {
-        ctx.bind(localAddress, promise);
+    default void bind(ChannelHandlerContext ctx, SocketAddress localAddress,
+                      ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.bind(localAddress, callback);
     }
 
     /**
@@ -291,70 +292,70 @@ public interface ChannelHandler {
      * @param ctx               the {@link ChannelHandlerContext} for which the connect operation is made
      * @param remoteAddress     the {@link SocketAddress} to which it should connect
      * @param localAddress      the {@link SocketAddress} which is used as source on connect
-     * @param promise           the {@link ChannelPromise} to notify once the operation completes
+     * @param callback  the {@link ChannelOutboundInvokerCallback} to notify once the operation completes
      * @throws Exception        thrown if an error occurs
      */
     @Skip
     default void connect(
             ChannelHandlerContext ctx, SocketAddress remoteAddress,
-            SocketAddress localAddress, ChannelPromise promise) throws Exception {
-        ctx.connect(remoteAddress, localAddress, promise);
+            SocketAddress localAddress, ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.connect(remoteAddress, localAddress, callback);
     }
 
     /**
      * Called once a disconnect operation is made.
      *
      * @param ctx               the {@link ChannelHandlerContext} for which the disconnect operation is made
-     * @param promise           the {@link ChannelPromise} to notify once the operation completes
+     * @param callback  the {@link ChannelOutboundInvokerCallback} to notify once the operation completes
      * @throws Exception        thrown if an error occurs
      */
     @Skip
-    default void disconnect(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        ctx.disconnect(promise);
+    default void disconnect(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.disconnect(callback);
     }
 
     /**
      * Called once a close operation is made.
      *
      * @param ctx               the {@link ChannelHandlerContext} for which the close operation is made
-     * @param promise           the {@link ChannelPromise} to notify once the operation completes
+     * @param callback  the {@link ChannelOutboundInvokerCallback} to notify once the operation completes
      * @throws Exception        thrown if an error occurs
      */
     @Skip
-    default void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        ctx.close(promise);
+    default void close(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.close(callback);
     }
 
     /**
      * Called once a register operation is made to register for IO on the {@link EventLoop}.
      *
      * @param ctx               the {@link ChannelHandlerContext} for which the register operation is made
-     * @param promise           the {@link ChannelPromise} to notify once the operation completes
+     * @param callback  the {@link ChannelOutboundInvokerCallback} to notify once the operation completes
      * @throws Exception        thrown if an error occurs
      */
     @Skip
-    default void register(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        ctx.register(promise);
+    default void register(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.register(callback);
     }
 
     /**
      * Called once a deregister operation is made from the current registered {@link EventLoop}.
      *
      * @param ctx               the {@link ChannelHandlerContext} for which the deregister operation is made
-     * @param promise           the {@link ChannelPromise} to notify once the operation completes
+     * @param callback  the {@link ChannelOutboundInvokerCallback} to notify once the operation completes
      * @throws Exception        thrown if an error occurs
      */
     @Skip
-    default void deregister(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        ctx.deregister(promise);
+    default void deregister(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.deregister(callback);
     }
 
     /**
-     * Intercepts {@link ChannelHandlerContext#read()}.
+     * Intercepts {@link ChannelHandlerContext#read(ChannelOutboundInvokerCallback)}.
      */
     @Skip
-    default void read(ChannelHandlerContext ctx) throws Exception {
-        ctx.read();
+    default void read(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.read(callback);
     }
 
     /**
@@ -364,12 +365,13 @@ public interface ChannelHandler {
      *
      * @param ctx               the {@link ChannelHandlerContext} for which the write operation is made
      * @param msg               the message to write
-     * @param promise           the {@link ChannelPromise} to notify once the operation completes
+     * @param callback  the {@link ChannelOutboundInvokerCallback} to notify once the operation completes
      * @throws Exception        thrown if an error occurs
      */
     @Skip
-    default void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-        ctx.write(msg, promise);
+    default void write(ChannelHandlerContext ctx, Object msg, ChannelOutboundInvokerCallback callback)
+            throws Exception {
+        ctx.write(msg, callback);
     }
 
     /**
@@ -377,10 +379,11 @@ public interface ChannelHandler {
      * that are pending.
      *
      * @param ctx               the {@link ChannelHandlerContext} for which the flush operation is made
+     * @param callback  the {@link ChannelOutboundInvokerCallback} to notify once the operation completes
      * @throws Exception        thrown if an error occurs
      */
     @Skip
-    default void flush(ChannelHandlerContext ctx) throws Exception {
-        ctx.flush();
+    default void flush(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.flush(callback);
     }
 }

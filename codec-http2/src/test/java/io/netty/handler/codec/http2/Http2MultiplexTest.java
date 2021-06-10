@@ -21,6 +21,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.WriteBufferWaterMark;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -1261,7 +1262,7 @@ public abstract class Http2MultiplexTest<C extends Http2FrameCodec> {
         }
 
         @Override
-        public void flush(ChannelHandlerContext ctx) throws Exception {
+        public void flush(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
             didFlush = true;
             ctx.flush();
         }

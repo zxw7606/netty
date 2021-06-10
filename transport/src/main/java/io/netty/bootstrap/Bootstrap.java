@@ -263,9 +263,9 @@ public class Bootstrap extends AbstractBootstrap<Bootstrap, Channel, ChannelFact
         final Channel channel = connectPromise.channel();
         channel.eventLoop().execute(() -> {
             if (localAddress == null) {
-                channel.connect(remoteAddress, connectPromise);
+                channel.connect(remoteAddress, connectPromise.asOutboundInvokerCallback());
             } else {
-                channel.connect(remoteAddress, localAddress, connectPromise);
+                channel.connect(remoteAddress, localAddress, connectPromise.asOutboundInvokerCallback());
             }
             connectPromise.addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
         });

@@ -20,6 +20,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOutboundInvoker;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.util.Attribute;
@@ -185,39 +187,39 @@ abstract class DelegatingChannelHandlerContext implements ChannelHandlerContext 
     }
 
     @Override
-    public ChannelFuture register(ChannelPromise promise) {
-        return ctx.register(promise);
+    public ChannelHandlerContext register(ChannelOutboundInvokerCallback callback) {
+        return ctx.register(callback);
     }
 
     @Override
-    public ChannelFuture bind(SocketAddress localAddress, ChannelPromise promise) {
-        return ctx.bind(localAddress, promise);
+    public ChannelOutboundInvoker bind(SocketAddress localAddress, ChannelOutboundInvokerCallback callback) {
+        return ctx.bind(localAddress, callback);
     }
 
     @Override
-    public ChannelFuture connect(SocketAddress remoteAddress, ChannelPromise promise) {
-        return ctx.connect(remoteAddress, promise);
+    public ChannelOutboundInvoker connect(SocketAddress remoteAddress, ChannelOutboundInvokerCallback callback) {
+        return ctx.connect(remoteAddress, callback);
     }
 
     @Override
-    public ChannelFuture connect(
-            SocketAddress remoteAddress, SocketAddress localAddress, ChannelPromise promise) {
-        return ctx.connect(remoteAddress, localAddress, promise);
+    public ChannelOutboundInvoker connect(
+            SocketAddress remoteAddress, SocketAddress localAddress, ChannelOutboundInvokerCallback callback) {
+        return ctx.connect(remoteAddress, localAddress, callback);
     }
 
     @Override
-    public ChannelFuture disconnect(ChannelPromise promise) {
-        return ctx.disconnect(promise);
+    public ChannelFuture disconnect(ChannelOutboundInvokerCallback callback) {
+        return ctx.disconnect(callback);
     }
 
     @Override
-    public ChannelFuture close(ChannelPromise promise) {
-        return ctx.close(promise);
+    public ChannelHandlerContext close(ChannelOutboundInvokerCallback callback) {
+        return ctx.close(callback);
     }
 
     @Override
-    public ChannelFuture deregister(ChannelPromise promise) {
-        return ctx.deregister(promise);
+    public ChannelHandlerContext deregister(ChannelOutboundInvokerCallback callback) {
+        return ctx.deregister(callback);
     }
 
     @Override
@@ -226,13 +228,13 @@ abstract class DelegatingChannelHandlerContext implements ChannelHandlerContext 
     }
 
     @Override
-    public ChannelFuture write(Object msg, ChannelPromise promise) {
-        return ctx.write(msg, promise);
+    public ChannelHandlerContext write(Object msg, ChannelOutboundInvokerCallback callback) {
+        return ctx.write(msg, callback);
     }
 
     @Override
-    public ChannelFuture writeAndFlush(Object msg, ChannelPromise promise) {
-        return ctx.writeAndFlush(msg, promise);
+    public ChannelHandlerContext writeAndFlush(Object msg, ChannelOutboundInvokerCallback callback) {
+        return ctx.writeAndFlush(msg, callback);
     }
 
     @Override

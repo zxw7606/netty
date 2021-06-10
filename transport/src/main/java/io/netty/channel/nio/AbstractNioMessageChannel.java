@@ -18,6 +18,7 @@ package io.netty.channel.nio;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelConfig;
 import io.netty.channel.ChannelOutboundBuffer;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoop;
 import io.netty.channel.RecvByteBufAllocator;
@@ -110,7 +111,7 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
                 if (closed) {
                     inputShutdown = true;
                     if (isOpen()) {
-                        close(newPromise());
+                        close(ChannelOutboundInvokerCallback.noop());
                     }
                 } else {
                     readIfIsAutoRead();

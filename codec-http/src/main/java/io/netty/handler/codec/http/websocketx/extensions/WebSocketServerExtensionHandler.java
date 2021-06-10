@@ -20,6 +20,7 @@ import static io.netty.util.internal.ObjectUtil.checkNonEmpty;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -99,17 +100,17 @@ public class WebSocketServerExtensionHandler implements ChannelHandler {
     }
 
     @Override
-    public void write(final ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+    public void write(final ChannelHandlerContext ctx, Object msg, ChannelOutboundInvokerCallback callback) throws Exception {
         if (msg instanceof HttpResponse) {
             HttpResponse httpResponse = (HttpResponse) msg;
             //checking the status is faster than looking at headers
             //so we do this first
             if (HttpResponseStatus.SWITCHING_PROTOCOLS.equals(httpResponse.status())) {
-                handlePotentialUpgrade(ctx, promise, httpResponse);
+                handlePotentialUpgrade(ctx, callback, httpResponse);
             }
         }
 
-        ctx.write(msg, promise);
+        ctx.write(msg, callback);
     }
 
     private void handlePotentialUpgrade(final ChannelHandlerContext ctx,

@@ -26,7 +26,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOutboundBuffer;
-import io.netty.channel.ChannelPromise;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -297,12 +297,13 @@ public class IdleStateHandler implements ChannelHandler {
     }
 
     @Override
-    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelOutboundInvokerCallback callback)
+            throws Exception {
         // Allow writing with void promise if handler is only configured for read timeout events.
         if (writerIdleTimeNanos > 0 || allIdleTimeNanos > 0) {
-            ctx.write(msg, promise).addListener(writeListener);
+            ctx.write(msg).addCallback(callback).addListener(writeListener);
         } else {
-            ctx.write(msg, promise);
+            ctx.write(msg, callback);
         }
     }
 

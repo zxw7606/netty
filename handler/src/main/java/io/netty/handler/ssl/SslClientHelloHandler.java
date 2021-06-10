@@ -18,6 +18,7 @@ package io.netty.handler.ssl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.DecoderException;
 import io.netty.util.concurrent.Future;
@@ -258,7 +259,7 @@ public abstract class SslClientHelloHandler<T> extends ByteToMessageDecoder {
     protected abstract void onLookupComplete(ChannelHandlerContext ctx, Future<T> future) throws Exception;
 
     @Override
-    public void read(ChannelHandlerContext ctx) throws Exception {
+    public void read(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
         if (suppressRead) {
             readPending = true;
         } else {

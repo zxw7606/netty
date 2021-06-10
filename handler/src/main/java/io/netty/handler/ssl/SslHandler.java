@@ -31,6 +31,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelOutboundBuffer;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.ChannelPromiseNotifier;
@@ -472,7 +473,8 @@ public class SslHandler extends ByteToMessageDecoder {
      * Sets the number of bytes to pass to each {@link SSLEngine#wrap(ByteBuffer[], int, int, ByteBuffer)} call.
      * <p>
      * This value will partition data which is passed to write
-     * {@link #write(ChannelHandlerContext, Object, ChannelPromise)}. The partitioning will work as follows:
+     * {@link ChannelHandler#write(ChannelHandlerContext, Object, ChannelOutboundInvokerCallback)}.
+     * The partitioning will work as follows:
      * <ul>
      * <li>If {@code wrapDataSize <= 0} then we will write each data chunk as is.</li>
      * <li>If {@code wrapDataSize > data size} then we will attempt to aggregate multiple data chunks together.</li>
@@ -697,40 +699,41 @@ public class SslHandler extends ByteToMessageDecoder {
     }
 
     @Override
-    public void bind(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise) throws Exception {
-        ctx.bind(localAddress, promise);
+    public void bind(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelOutboundInvokerCallback callback)
+            throws Exception {
+        ctx.bind(localAddress, callback);
     }
 
     @Override
     public void connect(ChannelHandlerContext ctx, SocketAddress remoteAddress, SocketAddress localAddress,
-                        ChannelPromise promise) throws Exception {
-        ctx.connect(remoteAddress, localAddress, promise);
+                        ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.connect(remoteAddress, localAddress, callback);
     }
 
     @Override
-    public void register(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        ctx.register(promise);
+    public void register(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.register(callback);
     }
 
     @Override
-    public void deregister(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        ctx.deregister(promise);
+    public void deregister(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        ctx.deregister(callback);
     }
 
     @Override
     public void disconnect(final ChannelHandlerContext ctx,
-                           final ChannelPromise promise) throws Exception {
-        closeOutboundAndChannel(ctx, promise, true);
+                           final ChannelOutboundInvokerCallback callback) throws Exception {
+        closeOutboundAndChannel(ctx, callback, true);
     }
 
     @Override
     public void close(final ChannelHandlerContext ctx,
-                      final ChannelPromise promise) throws Exception {
-        closeOutboundAndChannel(ctx, promise, false);
+                      final ChannelOutboundInvokerCallback callback) throws Exception {
+        closeOutboundAndChannel(ctx, callback, false);
     }
 
     @Override
-    public void read(ChannelHandlerContext ctx) throws Exception {
+    public void read(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
         if (!handshakePromise.isDone()) {
             setState(STATE_READ_DURING_HANDSHAKE);
         }
@@ -743,21 +746,29 @@ public class SslHandler extends ByteToMessageDecoder {
     }
 
     @Override
-    public void write(final ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+    public void write(final ChannelHandlerContext ctx, Object msg, ChannelOutboundInvokerCallback callback)
+            throws Exception {
         if (!(msg instanceof ByteBufConvertible)) {
             UnsupportedMessageTypeException exception = new UnsupportedMessageTypeException(msg, ByteBuf.class);
             ReferenceCountUtil.safeRelease(msg);
-            promise.setFailure(exception);
+            callback.onError(exception);
         } else if (pendingUnencryptedWrites == null) {
             ReferenceCountUtil.safeRelease(msg);
-            promise.setFailure(newPendingWritesNullException());
+            callback.onError(newPendingWritesNullException());
         } else {
-            pendingUnencryptedWrites.add(((ByteBufConvertible) msg).asByteBuf(), promise);
+            pendingUnencryptedWrites.add(((ByteBufConvertible) msg).asByteBuf(), f -> {
+                Throwable cause = f.cause();
+                if (cause != null) {
+                    callback.onError(cause);
+                } else {
+                    callback.onSuccess();
+                }
+            });
         }
     }
 
     @Override
-    public void flush(ChannelHandlerContext ctx) throws Exception {
+    public void flush(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
         // Do not encrypt the first write request if this handler is
         // created with startTLS flag turned on.
         if (startTls && !isStateSet(STATE_SENT_FIRST_MESSAGE)) {
@@ -835,12 +846,12 @@ public class SslHandler extends ByteToMessageDecoder {
                     final ByteBuf b = out;
                     out = null;
                     if (promise != null) {
-                        ctx.write(b, promise);
+                        ctx.write(b, promise.asOutboundInvokerCallback());
                     } else {
                         ctx.write(b);
                     }
                 } else if (promise != null) {
-                    ctx.write(Unpooled.EMPTY_BUFFER, promise);
+                    ctx.write(Unpooled.EMPTY_BUFFER, promise.asOutboundInvokerCallback());
                 }
                 // else out is not readable we can re-use it and so save an extra allocation
 
@@ -1817,15 +1828,16 @@ public class SslHandler extends ByteToMessageDecoder {
     }
 
     private void closeOutboundAndChannel(
-            final ChannelHandlerContext ctx, final ChannelPromise promise, boolean disconnect) throws Exception {
+            final ChannelHandlerContext ctx, final ChannelOutboundInvokerCallback callback, boolean disconnect)
+            throws Exception {
         setState(STATE_OUTBOUND_CLOSED);
         engine.closeOutbound();
 
         if (!ctx.channel().isActive()) {
             if (disconnect) {
-                ctx.disconnect(promise);
+                ctx.disconnect(callback);
             } else {
-                ctx.close(promise);
+                ctx.close(callback);
             }
             return;
         }
@@ -1844,11 +1856,10 @@ public class SslHandler extends ByteToMessageDecoder {
                 // because of a propagated Exception.
                 //
                 // See https://github.com/netty/netty/issues/5931
-                safeClose(ctx, closeNotifyPromise, ctx.newPromise().addListener(
-                        new ChannelPromiseNotifier(false, promise)));
+                safeClose(ctx, closeNotifyPromise, ctx.newPromise().addCallback(callback));
             } else {
                 /// We already handling the close_notify so just attach the promise to the sslClosePromise.
-                sslClosePromise.addListener((FutureListener<Channel>) future -> promise.setSuccess());
+                sslClosePromise.addListener((FutureListener<Channel>) future -> callback.onSuccess());
             }
         }
     }
@@ -1859,7 +1870,7 @@ public class SslHandler extends ByteToMessageDecoder {
         } else {
             promise.setFailure(newPendingWritesNullException());
         }
-        flush(ctx);
+        flush(ctx, ChannelOutboundInvokerCallback.noop());
     }
 
     @Override
@@ -2030,7 +2041,7 @@ public class SslHandler extends ByteToMessageDecoder {
             final ChannelHandlerContext ctx, final ChannelFuture flushFuture,
             final ChannelPromise promise) {
         if (!ctx.channel().isActive()) {
-            ctx.close(promise);
+            ctx.close(promise.asOutboundInvokerCallback());
             return;
         }
 
@@ -2044,7 +2055,7 @@ public class SslHandler extends ByteToMessageDecoder {
                     if (!flushFuture.isDone()) {
                         logger.warn("{} Last write attempt timed out; force-closing the connection.",
                                 ctx.channel());
-                        addCloseListener(ctx.close(ctx.newPromise()), promise);
+                        addCloseListener(ctx.close(), promise);
                     }
                 }, closeNotifyTimeout, TimeUnit.MILLISECONDS);
             } else {
@@ -2064,7 +2075,7 @@ public class SslHandler extends ByteToMessageDecoder {
                 if (ctx.channel().isActive()) {
                     // Trigger the close in all cases to make sure the promise is notified
                     // See https://github.com/netty/netty/issues/2358
-                    addCloseListener(ctx.close(ctx.newPromise()), promise);
+                    addCloseListener(ctx.close(), promise);
                 } else {
                     promise.trySuccess();
                 }
@@ -2079,7 +2090,7 @@ public class SslHandler extends ByteToMessageDecoder {
                                     ctx.channel(), closeNotifyReadTimeout);
 
                             // Do the close now...
-                            addCloseListener(ctx.close(ctx.newPromise()), promise);
+                            addCloseListener(ctx.close(), promise);
                         }
                     }, closeNotifyReadTimeout, TimeUnit.MILLISECONDS);
                 } else {
@@ -2092,7 +2103,7 @@ public class SslHandler extends ByteToMessageDecoder {
                         closeNotifyReadTimeoutFuture.cancel(false);
                     }
                     if (ctx.channel().isActive()) {
-                        addCloseListener(ctx.close(ctx.newPromise()), promise);
+                        addCloseListener(ctx.close(), promise);
                     } else {
                         promise.trySuccess();
                     }

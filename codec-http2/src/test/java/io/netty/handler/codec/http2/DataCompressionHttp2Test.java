@@ -141,7 +141,7 @@ public class DataCompressionHttp2Test {
 
         runInChannel(clientChannel, () -> {
             clientEncoder.writeHeaders(ctxClient(), 3, headers, 0, true, newPromiseClient());
-            clientHandler.flush(ctxClient());
+            clientHandler.flush(ctxClient(), );
         });
         awaitServer();
         verify(serverListener).onHeadersRead(any(ChannelHandlerContext.class), eq(3), eq(headers), eq(0),
@@ -160,7 +160,7 @@ public class DataCompressionHttp2Test {
             runInChannel(clientChannel, () -> {
                 clientEncoder.writeHeaders(ctxClient(), 3, headers, 0, false, newPromiseClient());
                 clientEncoder.writeData(ctxClient(), 3, data.retain(), 0, true, newPromiseClient());
-                clientHandler.flush(ctxClient());
+                clientHandler.flush(ctxClient(), );
             });
             awaitServer();
             assertEquals(text, serverOut.toString(CharsetUtil.UTF_8.name()));
@@ -181,7 +181,7 @@ public class DataCompressionHttp2Test {
             runInChannel(clientChannel, () -> {
                 clientEncoder.writeHeaders(ctxClient(), 3, headers, 0, false, newPromiseClient());
                 clientEncoder.writeData(ctxClient(), 3, data.retain(), 0, true, newPromiseClient());
-                clientHandler.flush(ctxClient());
+                clientHandler.flush(ctxClient(), );
             });
             awaitServer();
             assertEquals(text, serverOut.toString(CharsetUtil.UTF_8.name()));
@@ -205,7 +205,7 @@ public class DataCompressionHttp2Test {
                 clientEncoder.writeHeaders(ctxClient(), 3, headers, 0, false, newPromiseClient());
                 clientEncoder.writeData(ctxClient(), 3, data1.retain(), 0, false, newPromiseClient());
                 clientEncoder.writeData(ctxClient(), 3, data2.retain(), 0, true, newPromiseClient());
-                clientHandler.flush(ctxClient());
+                clientHandler.flush(ctxClient(), );
             });
             awaitServer();
             assertEquals(text1 + text2, serverOut.toString(CharsetUtil.UTF_8.name()));
@@ -229,7 +229,7 @@ public class DataCompressionHttp2Test {
             runInChannel(clientChannel, () -> {
                 clientEncoder.writeHeaders(ctxClient(), 3, headers, 0, false, newPromiseClient());
                 clientEncoder.writeData(ctxClient(), 3, data.retain(), 0, true, newPromiseClient());
-                clientHandler.flush(ctxClient());
+                clientHandler.flush(ctxClient(), );
             });
             awaitServer();
             assertEquals(data.readerIndex(0).toString(CharsetUtil.UTF_8),

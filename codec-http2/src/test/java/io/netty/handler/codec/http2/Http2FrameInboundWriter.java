@@ -22,6 +22,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOutboundInvoker;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -259,38 +261,38 @@ final class Http2FrameInboundWriter {
         }
 
         @Override
-        public ChannelFuture bind(SocketAddress localAddress, ChannelPromise promise) {
-            return channel.bind(localAddress, promise);
+        public ChannelOutboundInvoker bind(SocketAddress localAddress, ChannelOutboundInvokerCallback callback) {
+            return channel.bind(localAddress, callback);
         }
 
         @Override
-        public ChannelFuture connect(SocketAddress remoteAddress, ChannelPromise promise) {
-            return channel.connect(remoteAddress, promise);
+        public ChannelOutboundInvoker connect(SocketAddress remoteAddress, ChannelOutboundInvokerCallback callback) {
+            return channel.connect(remoteAddress, callback);
         }
 
         @Override
-        public ChannelFuture connect(SocketAddress remoteAddress, SocketAddress localAddress, ChannelPromise promise) {
-            return channel.connect(remoteAddress, localAddress, promise);
+        public ChannelOutboundInvoker connect(SocketAddress remoteAddress, SocketAddress localAddress, ChannelOutboundInvokerCallback callback) {
+            return channel.connect(remoteAddress, localAddress, callback);
         }
 
         @Override
-        public ChannelFuture disconnect(ChannelPromise promise) {
-            return channel.disconnect(promise);
+        public ChannelFuture disconnect(ChannelOutboundInvokerCallback callback) {
+            return channel.disconnect(callback);
         }
 
         @Override
-        public ChannelFuture close(ChannelPromise promise) {
-            return channel.close(promise);
+        public ChannelHandlerContext close(ChannelOutboundInvokerCallback callback) {
+            return channel.close(callback);
         }
 
         @Override
-        public ChannelFuture register(ChannelPromise promise) {
-            return channel.register(promise);
+        public ChannelHandlerContext register(ChannelOutboundInvokerCallback callback) {
+            return channel.register(callback);
         }
 
         @Override
-        public ChannelFuture deregister(ChannelPromise promise) {
-            return channel.deregister(promise);
+        public ChannelHandlerContext deregister(ChannelOutboundInvokerCallback callback) {
+            return channel.deregister(callback);
         }
 
         @Override
@@ -299,20 +301,20 @@ final class Http2FrameInboundWriter {
         }
 
         @Override
-        public ChannelFuture write(Object msg, ChannelPromise promise) {
-            return writeAndFlush(msg, promise);
+        public ChannelHandlerContext write(Object msg, ChannelOutboundInvokerCallback callback) {
+            return writeAndFlush(msg, callback);
         }
 
         @Override
-        public ChannelFuture writeAndFlush(Object msg, ChannelPromise promise) {
+        public ChannelHandlerContext writeAndFlush(Object msg, ChannelOutboundInvokerCallback callback) {
             try {
                 channel.writeInbound(msg);
                 channel.runPendingTasks();
-                promise.setSuccess();
+                callback.setSuccess();
             } catch (Throwable cause) {
-                promise.setFailure(cause);
+                callback.setFailure(cause);
             }
-            return promise;
+            return callback;
         }
 
         @Override

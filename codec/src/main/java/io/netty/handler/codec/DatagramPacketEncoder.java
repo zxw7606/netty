@@ -20,8 +20,8 @@ import static java.util.Objects.requireNonNull;
 import io.netty.buffer.ByteBufConvertible;
 import io.netty.channel.AddressedEnvelope;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelPromise;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.codec.protobuf.ProtobufEncoder;
 import io.netty.util.internal.StringUtil;
@@ -91,40 +91,41 @@ public class DatagramPacketEncoder<M> extends MessageToMessageEncoder<AddressedE
     }
 
     @Override
-    public void bind(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise) throws Exception {
-        encoder.bind(ctx, localAddress, promise);
+    public void bind(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelOutboundInvokerCallback callback)
+            throws Exception {
+        encoder.bind(ctx, localAddress, callback);
     }
 
     @Override
     public void connect(
             ChannelHandlerContext ctx, SocketAddress remoteAddress,
-            SocketAddress localAddress, ChannelPromise promise) throws Exception {
-        encoder.connect(ctx, remoteAddress, localAddress, promise);
+            SocketAddress localAddress, ChannelOutboundInvokerCallback callback) throws Exception {
+        encoder.connect(ctx, remoteAddress, localAddress, callback);
     }
 
     @Override
-    public void disconnect(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        encoder.disconnect(ctx, promise);
+    public void disconnect(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        encoder.disconnect(ctx, callback);
     }
 
     @Override
-    public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        encoder.close(ctx, promise);
+    public void close(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        encoder.close(ctx, callback);
     }
 
     @Override
-    public void deregister(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        encoder.deregister(ctx, promise);
+    public void deregister(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        encoder.deregister(ctx, callback);
     }
 
     @Override
-    public void read(ChannelHandlerContext ctx) throws Exception {
-        encoder.read(ctx);
+    public void read(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        encoder.read(ctx, callback);
     }
 
     @Override
-    public void flush(ChannelHandlerContext ctx) throws Exception {
-        encoder.flush(ctx);
+    public void flush(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
+        encoder.flush(ctx, callback);
     }
 
     @Override
