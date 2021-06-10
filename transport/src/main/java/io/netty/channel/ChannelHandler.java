@@ -275,9 +275,26 @@ public interface ChannelHandler {
     /**
      * Called once a bind operation is made.
      *
+     * If you want to be notified once the bind completes you need to ensure you call the right method and chain
+     * up the {@link ChannelOutboundInvokerCallback} as well.
+     *
+     * For example:
+     *
+     * <pre>
+     * public class OutboundHandler implements {@link ChannelHandler} {
+     *     {@code @Override}
+     *     public void bind({@link ChannelHandlerContext} ctx, {@link SocketAddress} localAddress,
+     *             {@link ChannelOutboundInvokerCallback} callback) {
+     *         ctx.bind(localAddress).addCallback(callback).addListener(f -> {
+     *            ...
+     *         });
+     *     }
+     * }
+     * </pre>
+     *
      * @param ctx               the {@link ChannelHandlerContext} for which the bind operation is made
      * @param localAddress      the {@link SocketAddress} to which it should bound
-     * @param callback  the {@link ChannelOutboundInvokerCallback} to notify once the operation completes
+     * @param callback          the {@link ChannelOutboundInvokerCallback} to notify once the operation completes
      * @throws Exception        thrown if an error occurs
      */
     @Skip
@@ -288,6 +305,23 @@ public interface ChannelHandler {
 
     /**
      * Called once a connect operation is made.
+     *
+     * If you want to be notified once the connect completes you need to ensure you call the right method and chain
+     * up the {@link ChannelOutboundInvokerCallback} as well.
+     *
+     * For example:
+     *
+     * <pre>
+     * public class OutboundHandler implements {@link ChannelHandler} {
+     *     {@code @Override}
+     *     public void connect({@link ChannelHandlerContext} ctx, {@link SocketAddress} remoteAddress,
+     *             {@link SocketAddress} localAddress, {@link ChannelOutboundInvokerCallback} callback) {
+     *         ctx.connect(remoteAddress, localAddress).addCallback(callback).addListener(f -> {
+     *            ...
+     *         });
+     *     }
+     * }
+     * </pre>
      *
      * @param ctx               the {@link ChannelHandlerContext} for which the connect operation is made
      * @param remoteAddress     the {@link SocketAddress} to which it should connect
@@ -305,6 +339,22 @@ public interface ChannelHandler {
     /**
      * Called once a disconnect operation is made.
      *
+     * If you want to be notified once the disconnect completes you need to ensure you call the right method and chain
+     * up the {@link ChannelOutboundInvokerCallback} as well.
+     *
+     * For example:
+     *
+     * <pre>
+     * public class OutboundHandler implements {@link ChannelHandler} {
+     *     {@code @Override}
+     *     public void disconnect({@link ChannelHandlerContext} ctx, {@link ChannelOutboundInvokerCallback} callback) {
+     *         ctx.disconnect().addCallback(callback).addListener(f -> {
+     *            ...
+     *         });
+     *     }
+     * }
+     * </pre>
+     *
      * @param ctx               the {@link ChannelHandlerContext} for which the disconnect operation is made
      * @param callback  the {@link ChannelOutboundInvokerCallback} to notify once the operation completes
      * @throws Exception        thrown if an error occurs
@@ -316,6 +366,22 @@ public interface ChannelHandler {
 
     /**
      * Called once a close operation is made.
+     *
+     * If you want to be notified once the close completes you need to ensure you call the right method and chain
+     * up the {@link ChannelOutboundInvokerCallback} as well.
+     *
+     * For example:
+     *
+     * <pre>
+     * public class OutboundHandler implements {@link ChannelHandler} {
+     *     {@code @Override}
+     *     public void close({@link ChannelHandlerContext} ctx, {@link ChannelOutboundInvokerCallback} callback) {
+     *         ctx.close().addCallback(callback).addListener(f -> {
+     *            ...
+     *         });
+     *     }
+     * }
+     * </pre>
      *
      * @param ctx               the {@link ChannelHandlerContext} for which the close operation is made
      * @param callback  the {@link ChannelOutboundInvokerCallback} to notify once the operation completes
@@ -329,7 +395,23 @@ public interface ChannelHandler {
     /**
      * Called once a register operation is made to register for IO on the {@link EventLoop}.
      *
-     * @param ctx               the {@link ChannelHandlerContext} for which the register operation is made
+     * If you want to be notified once the register completes you need to ensure you call the right method and chain
+     * up the {@link ChannelOutboundInvokerCallback} as well.
+     *
+     * For example:
+     *
+     * <pre>
+     * public class OutboundHandler implements {@link ChannelHandler} {
+     *     {@code @Override}
+     *     public void register({@link ChannelHandlerContext} ctx, {@link ChannelOutboundInvokerCallback} callback) {
+     *         ctx.register().addCallback(callback).addListener(f -> {
+     *            ...
+     *         });
+     *     }
+     * }
+     * </pre>
+     *
+     * @param ctx       the {@link ChannelHandlerContext} for which the register operation is made
      * @param callback  the {@link ChannelOutboundInvokerCallback} to notify once the operation completes
      * @throws Exception        thrown if an error occurs
      */
@@ -341,9 +423,25 @@ public interface ChannelHandler {
     /**
      * Called once a deregister operation is made from the current registered {@link EventLoop}.
      *
-     * @param ctx               the {@link ChannelHandlerContext} for which the deregister operation is made
-     * @param callback  the {@link ChannelOutboundInvokerCallback} to notify once the operation completes
-     * @throws Exception        thrown if an error occurs
+     * If you want to be notified once the register completes you need to ensure you call the right method and chain
+     * up the {@link ChannelOutboundInvokerCallback} as well.
+     *
+     * For example:
+     *
+     * <pre>
+     * public class OutboundHandler implements {@link ChannelHandler} {
+     *     {@code @Override}
+     *     public void deregister({@link ChannelHandlerContext} ctx, {@link ChannelOutboundInvokerCallback} callback) {
+     *         ctx.deregister().addCallback(callback).addListener(f -> {
+     *            ...
+     *         });
+     *     }
+     * }
+     * </pre>
+     *
+     * @param ctx         the {@link ChannelHandlerContext} for which the deregister operation is made
+     * @param callback    the {@link ChannelOutboundInvokerCallback} to notify once the operation completes
+     * @throws Exception  thrown if an error occurs
      */
     @Skip
     default void deregister(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
@@ -352,6 +450,22 @@ public interface ChannelHandler {
 
     /**
      * Intercepts {@link ChannelHandlerContext#read(ChannelOutboundInvokerCallback)}.
+     *
+     * If you want to be notified once the read completes you need to ensure you call the right method and chain
+     * up the {@link ChannelOutboundInvokerCallback} as well.
+     *
+     * For example:
+     *
+     * <pre>
+     * public class OutboundHandler implements {@link ChannelHandler} {
+     *     {@code @Override}
+     *     public void read({@link ChannelHandlerContext} ctx, {@link ChannelOutboundInvokerCallback} callback) {
+     *         ctx.read().addCallback(callback).addListener(f -> {
+     *            ...
+     *         });
+     *     }
+     * }
+     * </pre>
      */
     @Skip
     default void read(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
@@ -362,6 +476,23 @@ public interface ChannelHandler {
      * Called once a write operation is made. The write operation will write the messages through the
      * {@link ChannelPipeline}. Those are then ready to be flushed to the actual {@link Channel} once
      * {@link Channel#flush()} is called
+     *
+     * If you want to be notified once the write completes you need to ensure you call the right method and chain
+     * up the {@link ChannelOutboundInvokerCallback} as well.
+     *
+     * For example:
+     *
+     * <pre>
+     * public class OutboundHandler implements {@link ChannelHandler} {
+     *     {@code @Override}
+     *     public void write({@link ChannelHandlerContext} ctx, Object msg,
+     *             {@link ChannelOutboundInvokerCallback} callback) {
+     *         ctx.write(msg).addCallback(callback).addListener(f -> {
+     *            ...
+     *         });
+     *     }
+     * }
+     * </pre>
      *
      * @param ctx               the {@link ChannelHandlerContext} for which the write operation is made
      * @param msg               the message to write
@@ -378,9 +509,25 @@ public interface ChannelHandler {
      * Called once a flush operation is made. The flush operation will try to flush out all previous written messages
      * that are pending.
      *
-     * @param ctx               the {@link ChannelHandlerContext} for which the flush operation is made
-     * @param callback  the {@link ChannelOutboundInvokerCallback} to notify once the operation completes
-     * @throws Exception        thrown if an error occurs
+     * If you want to be notified once the flush completes you need to ensure you call the right method and chain
+     * up the {@link ChannelOutboundInvokerCallback} as well.
+     *
+     * For example:
+     *
+     * <pre>
+     * public class OutboundHandler implements {@link ChannelHandler} {
+     *     {@code @Override}
+     *     public void flush({@link ChannelHandlerContext} ctx, {@link ChannelOutboundInvokerCallback} callback) {
+     *         ctx.write(msg).addCallback(callback).addListener(f -> {
+     *            ...
+     *         });
+     *     }
+     * }
+     * </pre>
+     *
+     * @param ctx         the {@link ChannelHandlerContext} for which the flush operation is made
+     * @param callback    the {@link ChannelOutboundInvokerCallback} to notify once the operation completes
+     * @throws Exception  thrown if an error occurs
      */
     @Skip
     default void flush(ChannelHandlerContext ctx, ChannelOutboundInvokerCallback callback) throws Exception {
