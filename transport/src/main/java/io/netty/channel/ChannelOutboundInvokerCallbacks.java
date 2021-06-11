@@ -23,18 +23,6 @@ final class ChannelOutboundInvokerCallbacks {
 
     private ChannelOutboundInvokerCallbacks() { }
 
-    static final ChannelOutboundInvokerCallback NOOP = new ChannelOutboundInvokerCallback() {
-        @Override
-        public void onSuccess() {
-            // NOOP
-        }
-
-        @Override
-        public void onError(Throwable ignore) {
-            // NOOP
-        }
-    };
-
     static boolean isNotValidCallback(Channel channel, ChannelOutboundInvokerCallback callback) {
         if (callback instanceof ChannelPromise) {
             return isNotValidPromise(channel, (ChannelPromise) callback);

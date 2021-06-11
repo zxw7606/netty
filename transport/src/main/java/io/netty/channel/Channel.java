@@ -324,6 +324,11 @@ public interface Channel extends AttributeMap, ChannelOutboundInvoker<Channel>, 
         return pipeline().newFailedFuture(cause);
     }
 
+    @Override
+    default ChannelOutboundInvokerCallback voidCallback() {
+        return pipeline().voidCallback();
+    }
+
     /**
      * <em>Unsafe</em> operations that should <em>never</em> be called from user-code. These methods
      * are only provided to implement the actual transport, and must be invoked from an I/O thread except for the

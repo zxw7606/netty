@@ -16,7 +16,6 @@
 package io.netty.channel.local;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.channel.IoExecutionContext;
 import io.netty.channel.IoHandler;
 import io.netty.channel.IoHandlerFactory;
@@ -76,7 +75,7 @@ public final class LocalHandler implements IoHandler {
     @Override
     public void prepareToDestroy() {
         for (LocalChannelUnsafe unsafe : registeredChannels) {
-            unsafe.close(ChannelOutboundInvokerCallback.noop());
+            unsafe.closeWithNoop();
         }
         registeredChannels.clear();
     }

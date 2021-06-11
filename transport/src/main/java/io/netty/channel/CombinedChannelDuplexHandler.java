@@ -338,6 +338,18 @@ public class CombinedChannelDuplexHandler<I extends ChannelHandler, O extends Ch
 
     private static final class DelegatingChannelHandlerContext implements ChannelHandlerContext {
 
+        private final ChannelOutboundInvokerCallback voidCallback = new ChannelOutboundInvokerCallback() {
+            @Override
+            public void onSuccess() {
+                // NOOP
+            }
+
+            @Override
+            public void onError(Throwable cause) {
+                fireExceptionCaught(cause);
+            }
+        };
+
         private final ChannelHandlerContext ctx;
         private final ChannelHandler handler;
         boolean removed;
@@ -519,6 +531,11 @@ public class CombinedChannelDuplexHandler<I extends ChannelHandler, O extends Ch
         @Override
         public <T> boolean hasAttr(AttributeKey<T> key) {
             return ctx.channel().hasAttr(key);
+        }
+
+        @Override
+        public ChannelOutboundInvokerCallback voidCallback() {
+            return voidCallback;
         }
 
         void remove() {

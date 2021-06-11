@@ -42,16 +42,6 @@ public interface ChannelOutboundInvokerCallback {
     void onError(Throwable cause);
 
     /**
-     * A noop instance of an {@link ChannelOutboundInvokerCallback}. This can be used if you are not interested
-     * in the result of an {@link ChannelOutboundInvoker} at all.
-     *
-     * @return a noop instance.
-     */
-    static ChannelOutboundInvokerCallback noop() {
-        return ChannelOutboundInvokerCallbacks.NOOP;
-    }
-
-    /**
      * Return a {@link ChannelOutboundInvokerCallback} that will notify all given
      * {@link ChannelOutboundInvokerCallback}s.
      *

@@ -445,4 +445,12 @@ public interface ChannelOutboundInvoker<I extends ChannelOutboundInvoker<I>> {
      * every call of blocking methods will just return without blocking.
      */
     ChannelFuture newFailedFuture(Throwable cause);
+
+    /**
+     * Return a special {@link ChannelOutboundInvokerCallback} that will notify the {@link ChannelPipeline} about an
+     * error by calling {@link ChannelInboundInvoker#fireExceptionCaught(Throwable).}
+     *
+     * @return the callback.
+     */
+    ChannelOutboundInvokerCallback voidCallback();
 }

@@ -536,6 +536,9 @@ public interface ChannelPipeline
     @Override
     ChannelPipeline fireChannelWritabilityChanged();
 
+    @Override
+    ChannelOutboundInvokerCallback voidCallback();
+
     /**
      * Returns the {@link EventExecutor} which is used by all {@link ChannelHandler}s in the pipeline.
      */

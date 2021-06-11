@@ -759,5 +759,10 @@ public abstract class ByteToMessageDecoder extends ChannelHandlerAdapter {
         public ChannelFuture newFailedFuture(Throwable cause) {
             return ctx.newFailedFuture(cause);
         }
+
+        @Override
+        public ChannelOutboundInvokerCallback voidCallback() {
+            return ctx.voidCallback();
+        }
     }
 }

@@ -19,7 +19,6 @@ import static java.util.Objects.requireNonNull;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelException;
-import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.channel.DefaultSelectStrategyFactory;
 import io.netty.channel.EventLoopException;
 import io.netty.channel.IoExecutionContext;
@@ -330,7 +329,7 @@ public final class NioHandler implements IoHandler {
                 logger.warn("Failed to re-register a Channel to the new Selector.", e);
                 if (a instanceof AbstractNioChannel) {
                     AbstractNioChannel ch = (AbstractNioChannel) a;
-                    ch.unsafe().close(ChannelOutboundInvokerCallback.noop());
+                    ((AbstractNioChannel.AbstractNioUnsafe) ch.unsafe()).closeWithNoop();
                 } else {
                     @SuppressWarnings("unchecked")
                     NioTask<SelectableChannel> task = (NioTask<SelectableChannel>) a;
@@ -574,7 +573,7 @@ public final class NioHandler implements IoHandler {
         if (!k.isValid()) {
 
             // close the channel if the key is not valid anymore
-            unsafe.close(ChannelOutboundInvokerCallback.noop());
+            ((AbstractNioChannel.AbstractNioUnsafe) ch.unsafe()).closeWithNoop();
             return;
         }
 
@@ -604,7 +603,7 @@ public final class NioHandler implements IoHandler {
                 unsafe.read();
             }
         } catch (CancelledKeyException ignored) {
-            unsafe.close(ChannelOutboundInvokerCallback.noop());
+            ((AbstractNioChannel.AbstractNioUnsafe) unsafe).closeWithNoop();
         }
     }
 
@@ -652,7 +651,7 @@ public final class NioHandler implements IoHandler {
         }
 
         for (AbstractNioChannel ch: channels) {
-            ch.unsafe().close(ChannelOutboundInvokerCallback.noop());
+            ((AbstractNioChannel.AbstractNioUnsafe) ch.unsafe()).closeWithNoop();
         }
     }
 

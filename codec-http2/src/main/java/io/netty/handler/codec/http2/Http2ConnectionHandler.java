@@ -423,7 +423,7 @@ public class Http2ConnectionHandler extends ByteToMessageDecoder implements Http
         // the allocation and write loop. Reentering the event loop will lead to over or illegal allocation.
         try {
             if (ctx.channel().isWritable()) {
-                flush(ctx, ChannelOutboundInvokerCallback.noop());
+                flush(ctx, ctx.voidCallback());
             }
             encoder.flowController().channelWritabilityChanged();
         } finally {
@@ -536,7 +536,7 @@ public class Http2ConnectionHandler extends ByteToMessageDecoder implements Http
             // First call channelReadComplete0(...) as this may produce more data that we want to flush
             channelReadComplete0(ctx);
         } finally {
-            flush(ctx, ChannelOutboundInvokerCallback.noop());
+            flush(ctx, ctx.voidCallback());
         }
     }
 

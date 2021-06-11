@@ -218,9 +218,13 @@ public class LocalChannel extends AbstractChannel {
         }
     }
 
+    private LocalChannelUnsafe localUnsafe() {
+        return (LocalChannelUnsafe) unsafe();
+    }
+
     private void tryClose(boolean isActive) {
         if (isActive) {
-            unsafe().close(ChannelOutboundInvokerCallback.noop());
+            localUnsafe().closeWithNoop();
         } else {
             releaseInboundBuffers();
 
@@ -389,6 +393,11 @@ public class LocalChannel extends AbstractChannel {
     private class LocalUnsafe extends AbstractUnsafe implements LocalChannelUnsafe {
 
         @Override
+        public void closeWithNoop() {
+            close(noopCallback());
+        }
+
+        @Override
         public void connect(final SocketAddress remoteAddress,
                 SocketAddress localAddress, final ChannelOutboundInvokerCallback callback) {
             if (!ChannelOutboundInvokerCallback.setUncancellable(callback) || !ensureOpen(callback)) {
@@ -420,7 +429,7 @@ public class LocalChannel extends AbstractChannel {
                     doBind(localAddress);
                 } catch (Throwable t) {
                     callback.onError(t);
-                    close(ChannelOutboundInvokerCallback.noop());
+                    localUnsafe().closeWithNoop();
                     return;
                 }
             }
@@ -430,7 +439,7 @@ public class LocalChannel extends AbstractChannel {
                 Exception cause = new ConnectException("connection refused: " + remoteAddress);
                 connectListener = null;
                 callback.onError(cause);
-                close(ChannelOutboundInvokerCallback.noop());
+                localUnsafe().closeWithNoop();
                 return;
             }
 

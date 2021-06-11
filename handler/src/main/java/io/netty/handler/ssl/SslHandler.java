@@ -1867,10 +1867,10 @@ public class SslHandler extends ByteToMessageDecoder {
     private void flush(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
         if (pendingUnencryptedWrites != null) {
             pendingUnencryptedWrites.add(Unpooled.EMPTY_BUFFER, promise);
+            flush(ctx, ctx.voidCallback());
         } else {
             promise.setFailure(newPendingWritesNullException());
         }
-        flush(ctx, ChannelOutboundInvokerCallback.noop());
     }
 
     @Override

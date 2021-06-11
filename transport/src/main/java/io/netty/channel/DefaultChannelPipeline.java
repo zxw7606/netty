@@ -910,6 +910,11 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         return new FailedChannelFuture(channel(), executor(), cause);
     }
 
+    @Override
+    public ChannelOutboundInvokerCallback voidCallback() {
+        return head.voidCallback;
+    }
+
     /**
      * Called once a {@link Throwable} hit the end of the {@link ChannelPipeline} without been handled by the user
      * in {@link ChannelHandler#exceptionCaught(ChannelHandlerContext, Throwable)}.

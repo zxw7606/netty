@@ -23,7 +23,6 @@ import io.netty.channel.ChannelConfig;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelMetadata;
 import io.netty.channel.ChannelOutboundBuffer;
-import io.netty.channel.ChannelOutboundInvokerCallback;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoop;
 import io.netty.channel.FileRegion;
@@ -103,7 +102,7 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
                     shutdownInput();
                     pipeline.fireUserEventTriggered(ChannelInputShutdownEvent.INSTANCE);
                 } else {
-                    close(ChannelOutboundInvokerCallback.noop());
+                    closeWithNoop();
                 }
             } else {
                 inputClosedSeenErrorOnRead = true;

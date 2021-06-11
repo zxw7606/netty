@@ -160,6 +160,12 @@ public class LocalServerChannel extends AbstractServerChannel {
     }
 
     private final class DefaultServerUnsafe extends AbstractUnsafe implements LocalChannelUnsafe {
+
+        @Override
+        public void closeWithNoop() {
+            close(voidCallback());
+        }
+
         @Override
         public void connect(SocketAddress remoteAddress, SocketAddress localAddress,
                             ChannelOutboundInvokerCallback callback) {

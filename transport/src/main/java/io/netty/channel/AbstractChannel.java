@@ -47,6 +47,18 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(AbstractChannel.class);
 
+    private static final ChannelOutboundInvokerCallback NOOP_CALLBACK = new ChannelOutboundInvokerCallback() {
+        @Override
+        public void onSuccess() {
+            // NOOP
+        }
+
+        @Override
+        public void onError(Throwable ignore) {
+            // NOOP
+        }
+    };
+
     private final Channel parent;
     private final ChannelId id;
     private final Unsafe unsafe;
@@ -613,7 +625,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
         }
 
         private void fireChannelInactiveAndDeregister(final boolean wasActive) {
-            deregister(ChannelOutboundInvokerCallback.noop(), wasActive && !isActive());
+            deregister(noopCallback(), wasActive && !isActive());
         }
 
         @Override
@@ -699,7 +711,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 callback.onSuccess();
             } catch (final Exception e) {
                 callback.onError(e);
-                close(ChannelOutboundInvokerCallback.noop());
+                close(noopCallback());
             }
         }
 
@@ -814,13 +826,13 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                  * may still return {@code true} even if the channel should be closed as result of the exception.
                  */
                 initialCloseCause = t;
-                close(ChannelOutboundInvokerCallback.noop(), t, newClosedChannelException(t, "flush0()"), false);
+                close(noopCallback(), t, newClosedChannelException(t, "flush0()"), false);
             } else {
                 try {
-                    shutdownOutput(ChannelOutboundInvokerCallback.noop(), t);
+                    shutdownOutput(noopCallback(), t);
                 } catch (Throwable t2) {
                     initialCloseCause = t;
-                    close(ChannelOutboundInvokerCallback.noop(), t2, newClosedChannelException(t, "flush0()"), false);
+                    close(noopCallback(), t2, newClosedChannelException(t, "flush0()"), false);
                 }
             }
         }
@@ -846,7 +858,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             if (isOpen()) {
                 return;
             }
-            close(ChannelOutboundInvokerCallback.noop());
+            close(noopCallback());
         }
 
         private void invokeLater(Runnable task) {
@@ -893,6 +905,15 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
          */
         protected Executor prepareToClose() {
             return null;
+        }
+
+        /**
+         * Returns a {@link ChannelOutboundInvokerCallback} that will just ignore any result.
+         *
+         * @return a noop.
+         */
+        protected ChannelOutboundInvokerCallback noopCallback() {
+            return NOOP_CALLBACK;
         }
     }
 

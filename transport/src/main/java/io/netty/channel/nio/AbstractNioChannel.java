@@ -200,6 +200,10 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
     protected abstract class AbstractNioUnsafe extends AbstractUnsafe implements NioUnsafe {
 
+        void closeWithNoop() {
+            close(noopCallback());
+        }
+
         protected final void removeReadOp() {
             SelectionKey key = selectionKey();
             // Check first if the key is still valid as it may be canceled as part of the deregistration
@@ -249,7 +253,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                             if (connectListener != null) {
                                 connectListener.onError(new ConnectTimeoutException(
                                         "connection timed out: " + remoteAddress));
-                                close(ChannelOutboundInvokerCallback.noop());
+                                closeWithNoop();
                             }
                         }, connectTimeoutMillis, TimeUnit.MILLISECONDS);
                     }
@@ -267,7 +271,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                                     connectTimeoutFuture.cancel(false);
                                 }
                                 connectListener = null;
-                                close(ChannelOutboundInvokerCallback.noop());
+                                closeWithNoop();
                             }
                         }
                     };

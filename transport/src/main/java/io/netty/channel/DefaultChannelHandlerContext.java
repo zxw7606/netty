@@ -65,6 +65,8 @@ final class DefaultChannelHandlerContext implements ChannelHandlerContext, Resou
     private final ChannelHandler handler;
     private final String name;
 
+    final ChannelOutboundInvokerCallback voidCallback = new VoidChannelOutboundInvokerCallback();
+
     // Lazily instantiated tasks used to trigger events to a handler with different executor.
     // There is no need to make this volatile as at worse it will just create a few more instances then needed.
     private Tasks invokeTasks;
@@ -641,7 +643,7 @@ final class DefaultChannelHandlerContext implements ChannelHandlerContext, Resou
             findAndInvokeRead(callback);
         } else {
             final Runnable readTask;
-            if (callback == ChannelOutboundInvokerCallback.noop()) {
+            if (callback instanceof VoidChannelOutboundInvokerCallback) {
                 Tasks tasks = invokeTasks();
                 readTask = tasks.invokeReadTaskWithNoop;
             } else {
@@ -738,7 +740,7 @@ final class DefaultChannelHandlerContext implements ChannelHandlerContext, Resou
             findAndInvokeFlush(callback);
         } else {
             final Runnable flushTask;
-            if (callback == ChannelOutboundInvokerCallback.noop()) {
+            if (callback instanceof VoidChannelOutboundInvokerCallback) {
                 Tasks tasks = invokeTasks();
                 flushTask = tasks.invokeFlushTaskWithNoop;
             } else {
@@ -770,7 +772,7 @@ final class DefaultChannelHandlerContext implements ChannelHandlerContext, Resou
     @Override
     public ChannelHandlerContext writeAndFlush(Object msg, ChannelOutboundInvokerCallback callback) {
         write(msg, callback);
-        flush(ChannelOutboundInvokerCallback.noop());
+        flush(voidCallback());
         return this;
     }
 
@@ -880,6 +882,11 @@ final class DefaultChannelHandlerContext implements ChannelHandlerContext, Resou
         return channel().hasAttr(key);
     }
 
+    @Override
+    public ChannelOutboundInvokerCallback voidCallback() {
+        return voidCallback;
+    }
+
     private static boolean safeExecute(EventExecutor executor, Runnable runnable,
                                        ChannelOutboundInvokerCallback callback, Object msg) {
         try {
@@ -984,7 +991,7 @@ final class DefaultChannelHandlerContext implements ChannelHandlerContext, Resou
         }
     }
 
-    private static final class Tasks {
+    private final class Tasks {
         private final Runnable invokeChannelReadCompleteTask;
         private final Runnable invokeReadTaskWithNoop;
         private final Runnable invokeChannelWritableStateChangedTask;
@@ -992,9 +999,21 @@ final class DefaultChannelHandlerContext implements ChannelHandlerContext, Resou
 
         Tasks(DefaultChannelHandlerContext ctx) {
             invokeChannelReadCompleteTask = ctx::findAndInvokeChannelReadComplete;
-            invokeReadTaskWithNoop = () -> ctx.findAndInvokeRead(ChannelOutboundInvokerCallback.noop());
+            invokeReadTaskWithNoop = () -> ctx.findAndInvokeRead(voidCallback);
             invokeChannelWritableStateChangedTask = ctx::invokeChannelWritabilityChanged;
-            invokeFlushTaskWithNoop = () -> ctx.findAndInvokeFlush(ChannelOutboundInvokerCallback.noop());
+            invokeFlushTaskWithNoop = () -> ctx.findAndInvokeFlush(voidCallback);
         }
     }
+
+    private final class VoidChannelOutboundInvokerCallback implements ChannelOutboundInvokerCallback {
+        @Override
+        public void onSuccess() {
+            // NOOP
+        }
+
+        @Override
+        public void onError(Throwable cause) {
+            fireExceptionCaught(cause);
+        }
+    };
 }
