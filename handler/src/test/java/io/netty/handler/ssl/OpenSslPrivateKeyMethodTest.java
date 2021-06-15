@@ -34,7 +34,10 @@ import io.netty.channel.local.LocalServerChannel;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.concurrent.Promise;
+import io.netty.util.internal.ThreadLocalRandom;
 import org.hamcrest.Matchers;
 import org.junit.AfterClass;
 import org.junit.Assume;
@@ -68,7 +71,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static io.netty.handler.ssl.OpenSslTestUtils.checkShouldUseKeyManagerFactory;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -79,11 +81,16 @@ public class OpenSslPrivateKeyMethodTest {
     private static SelfSignedCertificate CERT;
     private static ExecutorService EXECUTOR;
 
-    @Parameters(name = "{index}: delegate = {0}")
+    @Parameters(name = "{index}: delegate = {0}, async = {1}, newThread={2}")
     public static Collection<Object[]> parameters() {
         List<Object[]> dst = new ArrayList<Object[]>();
-        dst.add(new Object[] { true });
-        dst.add(new Object[] { false });
+        for (int a = 0; a < 2; a++) {
+            for (int b = 0; b < 2; b++) {
+                for (int c = 0; c < 2; c++) {
+                    dst.add(new Object[] { a == 0, b == 0, c == 0 });
+                }
+            }
+        }
         return dst;
     }
 
@@ -117,9 +124,13 @@ public class OpenSslPrivateKeyMethodTest {
     }
 
     private final boolean delegate;
+    private final boolean async;
+    private final boolean newThread;
 
-    public OpenSslPrivateKeyMethodTest(boolean delegate) {
+    public OpenSslPrivateKeyMethodTest(boolean delegate, boolean async, boolean newThread) {
         this.delegate = delegate;
+        this.async = async;
+        this.newThread = newThread;
     }
 
     private static void assumeCipherAvailable(SslProvider provider) throws NoSuchAlgorithmException {
@@ -170,6 +181,20 @@ public class OpenSslPrivateKeyMethodTest {
                 .build();
     }
 
+    private SslContext buildServerContext(OpenSslAsyncPrivateKeyMethod method) throws Exception {
+        List<String> ciphers = Collections.singletonList(RFC_CIPHER_NAME);
+
+        final KeyManagerFactory kmf = OpenSslX509KeyManagerFactory.newKeyless(CERT.cert());
+
+        return SslContextBuilder.forServer(kmf)
+                .sslProvider(SslProvider.OPENSSL)
+                .ciphers(ciphers)
+                // As this is not a TLSv1.3 cipher we should ensure we talk something else.
+                .protocols(SslUtils.PROTOCOL_TLS_V1_2)
+                .option(OpenSslContextOption.ASYNC_PRIVATE_KEY_METHOD, method)
+                .build();
+    }
+
     private Executor delegateExecutor() {
        return delegate ? EXECUTOR : null;
     }
@@ -177,15 +202,13 @@ public class OpenSslPrivateKeyMethodTest {
     private void assertThread() {
         if (delegate && OpenSslContext.USE_TASKS) {
             assertEquals(DelegateThread.class, Thread.currentThread().getClass());
-        } else {
-            assertNotEquals(DelegateThread.class, Thread.currentThread().getClass());
         }
     }
 
     @Test
     public void testPrivateKeyMethod() throws Exception {
         final AtomicBoolean signCalled = new AtomicBoolean();
-        final SslContext sslServerContext = buildServerContext(new OpenSslPrivateKeyMethod() {
+        OpenSslPrivateKeyMethod keyMethod = new OpenSslPrivateKeyMethod() {
             @Override
             public byte[] sign(SSLEngine engine, int signatureAlgorithm, byte[] input) throws Exception {
                 signCalled.set(true);
@@ -215,7 +238,10 @@ public class OpenSslPrivateKeyMethodTest {
             public byte[] decrypt(SSLEngine engine, byte[] input) {
                 throw new UnsupportedOperationException();
             }
-        });
+        };
+
+        final SslContext sslServerContext = async ? buildServerContext(
+                new OpenSslPrivateKeyMethodAdapter(keyMethod)) : buildServerContext(keyMethod);
 
         final SslContext sslClientContext = buildClientContext();
         try {
@@ -395,6 +421,70 @@ public class OpenSslPrivateKeyMethodTest {
     private static final class DelegateThread extends Thread {
         DelegateThread(Runnable target) {
             super(target);
+        }
+    }
+
+    private final class OpenSslPrivateKeyMethodAdapter implements OpenSslAsyncPrivateKeyMethod {
+        private final OpenSslPrivateKeyMethod keyMethod;
+
+        OpenSslPrivateKeyMethodAdapter(OpenSslPrivateKeyMethod keyMethod) {
+            this.keyMethod = keyMethod;
+        }
+
+        @Override
+        public Future<byte[]> sign(final SSLEngine engine, final int signatureAlgorithm, final byte[] input) {
+            final Promise<byte[]> promise = ImmediateEventExecutor.INSTANCE.newPromise();
+            try {
+                if (newThread) {
+                    // Let's run these in an extra thread to ensure that this would also work if the promise is
+                    // notified later.
+                    new DelegateThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                // Let's sleep for some time to ensure we would notify in an async fashion
+                                Thread.sleep(ThreadLocalRandom.current().nextLong(100, 500));
+                                promise.setSuccess(keyMethod.sign(engine, signatureAlgorithm, input));
+                            } catch (Throwable cause) {
+                                promise.setFailure(cause);
+                            }
+                        }
+                    }).start();
+                } else {
+                    promise.setSuccess(keyMethod.sign(engine, signatureAlgorithm, input));
+                }
+            } catch (Throwable cause) {
+                promise.setFailure(cause);
+            }
+            return promise;
+        }
+
+        @Override
+        public Future<byte[]> decrypt(final SSLEngine engine, final byte[] input) {
+            final Promise<byte[]> promise = ImmediateEventExecutor.INSTANCE.newPromise();
+            try {
+                if (newThread) {
+                    // Let's run these in an extra thread to ensure that this would also work if the promise is
+                    // notified later.
+                    new DelegateThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                // Let's sleep for some time to ensure we would notify in an async fashion
+                                Thread.sleep(ThreadLocalRandom.current().nextLong(100, 500));
+                                promise.setSuccess(keyMethod.decrypt(engine, input));
+                            } catch (Throwable cause) {
+                                promise.setFailure(cause);
+                            }
+                        }
+                    }).start();
+                } else {
+                    promise.setSuccess(keyMethod.decrypt(engine, input));
+                }
+            } catch (Throwable cause) {
+                promise.setFailure(cause);
+            }
+            return promise;
         }
     }
 }
