@@ -476,6 +476,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 
             AbstractChannel.this.eventLoop = eventLoop;
 
+            // 由 eventLoop 来注册事件
             if (eventLoop.inEventLoop()) {
                 register0(promise);
             } else {
@@ -509,6 +510,10 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 neverRegistered = false;
                 registered = true;
 
+                // todo 这里注册完毕之后要通知pipeline
+                // 根据pipeline的调用， 他是在创建channel之后创建的。 可以见得和 channel有关， 不知到和eventLoop是否有关
+
+
                 // Ensure we call handlerAdded(...) before we actually notify the promise. This is needed as the
                 // user may already fire events through the pipeline in the ChannelFutureListener.
                 pipeline.invokeHandlerAddedIfNeeded();
@@ -519,6 +524,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 // multiple channel actives if the channel is deregistered and re-registered.
                 if (isActive()) {
                     if (firstRegistration) {
+                        // 一个Active事件， 这个和注册事件的区别就是 他指挥调用一次
                         pipeline.fireChannelActive();
                     } else if (config().isAutoRead()) {
                         // This channel was registered before and autoRead() is set. This means we need to begin read

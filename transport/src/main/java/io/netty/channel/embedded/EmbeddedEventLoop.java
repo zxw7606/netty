@@ -124,6 +124,7 @@ final class EmbeddedEventLoop extends AbstractScheduledEventExecutor implements 
     @Override
     public ChannelFuture register(ChannelPromise promise) {
         ObjectUtil.checkNotNull(promise, "promise");
+        // 注册步骤： 这里的Unsafe 和 CAS 的不太一样
         promise.channel().unsafe().register(this, promise);
         return promise;
     }
