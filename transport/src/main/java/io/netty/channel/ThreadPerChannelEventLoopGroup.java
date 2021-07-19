@@ -273,6 +273,7 @@ public class ThreadPerChannelEventLoopGroup extends AbstractEventExecutorGroup i
     public ChannelFuture register(Channel channel) {
         ObjectUtil.checkNotNull(channel, "channel");
         try {
+            // 获取一个Loop
             EventLoop l = nextChild();
             return l.register(new DefaultChannelPromise(channel, l));
         } catch (Throwable t) {
@@ -307,11 +308,13 @@ public class ThreadPerChannelEventLoopGroup extends AbstractEventExecutorGroup i
             throw new RejectedExecutionException("shutting down");
         }
 
+        // idleChildren 一个空前队列
         EventLoop loop = idleChildren.poll();
         if (loop == null) {
             if (maxChannels > 0 && activeChildren.size() >= maxChannels) {
                 throw tooManyChannels;
             }
+            // 创建一个Loop
             loop = newChild(childArgs);
             loop.terminationFuture().addListener(childTerminationListener);
         }
