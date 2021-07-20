@@ -152,6 +152,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
 
         try {
             if (ch != null) {
+                // 父类就是主Socket
                 buf.add(new NioSocketChannel(this, ch));
                 return 1;
             }

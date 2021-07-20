@@ -204,6 +204,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         @Override
         @SuppressWarnings("unchecked")
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
+            // todo 这里啥时候被放入channel的
             final Channel child = (Channel) msg;
 
             child.pipeline().addLast(childHandler);
