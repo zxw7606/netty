@@ -207,6 +207,8 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
             // todo 这里啥时候被放入channel的
             final Channel child = (Channel) msg;
 
+
+            // 可以见得 一个 pipeLine 就是在每个 channel初始化的时候被创建出来的。 他们公用一组 childHandler
             child.pipeline().addLast(childHandler);
 
             setChannelOptions(child, childOptions, logger);
