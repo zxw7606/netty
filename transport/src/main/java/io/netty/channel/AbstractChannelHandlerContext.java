@@ -352,14 +352,28 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         }
     }
 
+    /**
+     * 当handler执行完毕之后调用该选项,继续找下一个handler执行
+     * @param msg
+     * @return
+     */
     @Override
     public ChannelHandlerContext fireChannelRead(final Object msg) {
+        // 寻找下一个context
         invokeChannelRead(findContextInbound(MASK_CHANNEL_READ), msg);
         return this;
     }
 
+    /**
+     * pipeLine 调用channel read 入口。
+     * @param next
+     * @param msg
+     */
     static void invokeChannelRead(final AbstractChannelHandlerContext next, Object msg) {
+        // 如果可以的话， 将 msg 绑定到 next 上
         final Object m = next.pipeline.touch(ObjectUtil.checkNotNull(msg, "msg"), next);
+
+        // 如果当前的线程在 eventLoop里
         EventExecutor executor = next.executor();
         if (executor.inEventLoop()) {
             next.invokeChannelRead(m);
@@ -374,6 +388,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     }
 
     private void invokeChannelRead(Object msg) {
+        // context 对应的handler
         if (invokeHandler()) {
             try {
                 ((ChannelInboundHandler) handler()).channelRead(this, msg);

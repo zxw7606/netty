@@ -198,6 +198,11 @@ public final class GlobalEventExecutor extends AbstractScheduledEventExecutor im
         return !thread.isAlive();
     }
 
+    /**
+     * 执行一个任务, 这里可以见得，它并没有直接创建一个线程
+     * 而是 EventLoop自己创建一个现场来处理这些Task
+     * @param task
+     */
     @Override
     public void execute(Runnable task) {
         addTask(ObjectUtil.checkNotNull(task, "task"));
@@ -208,6 +213,8 @@ public final class GlobalEventExecutor extends AbstractScheduledEventExecutor im
 
     private void startThread() {
         if (started.compareAndSet(false, true)) {
+
+            // taskRunner 是真正 EventLoop逻辑
             final Thread t = threadFactory.newThread(taskRunner);
             // Set to null to ensure we not create classloader leaks by holds a strong reference to the inherited
             // classloader.
@@ -266,7 +273,6 @@ public final class GlobalEventExecutor extends AbstractScheduledEventExecutor im
                         //    -> safe to terminate the new thread will take care the rest
                         break;
                     }
-
                     // There are pending tasks added again.
                     if (!started.compareAndSet(false, true)) {
                         // startThread() started a new thread and set 'started' to true.

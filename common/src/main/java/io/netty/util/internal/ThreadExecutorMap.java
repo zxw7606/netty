@@ -69,6 +69,7 @@ public final class ThreadExecutorMap {
         return new Runnable() {
             @Override
             public void run() {
+                // 设置当前eventLoop 到 ThreadLocal
                 setCurrentEventExecutor(eventExecutor);
                 try {
                     command.run();
